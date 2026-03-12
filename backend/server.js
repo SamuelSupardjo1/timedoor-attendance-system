@@ -1,17 +1,13 @@
-const express = require("express")
-const cors = require("cors")
+const express = require("express");
+const pool = require("./config/db");
 
-const app = express()
+const app = express();
+app.use(express.json());
 
-app.use(cors())
-app.use(express.json())
+pool.connect()
+  .then(() => console.log("✅ Connected to PostgreSQL"))
+  .catch(err => console.error("❌ Database connection error:", err));
 
-app.get("/", (req,res)=>{
-  res.send("Timedoor Attendance API Running")
-})
-
-const PORT = 5000
-
-app.listen(PORT, ()=>{
-  console.log(`Server running on port ${PORT}`)
-})
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
