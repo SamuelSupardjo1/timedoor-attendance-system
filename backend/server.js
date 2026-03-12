@@ -1,12 +1,10 @@
 const express = require("express");
-const pool = require("./config/db");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 app.use(express.json());
 
-pool.connect()
-  .then(() => console.log("✅ Connected to PostgreSQL"))
-  .catch(err => console.error("❌ Database connection error:", err));
+app.use("/users", userRoutes);
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
