@@ -4,6 +4,7 @@ const studentRoutes = require("./src/routes/studentRoutes");
 const teacherRoutes = require("./src/routes/teacherRoutes");
 const courseRoutes = require("./src/routes/courseRoutes");
 const lessonRoutes = require("./src/routes/lessonRoutes");
+const attendanceRoutes = require("./src/routes/attendanceRoutes");
 
 const app = express();
 app.use(express.json());
@@ -13,6 +14,7 @@ app.use("/students", studentRoutes);
 app.use("/teachers", teacherRoutes);
 app.use("/courses", courseRoutes);
 app.use("/lessons", lessonRoutes);
+app.use("/attendance", attendanceRoutes);
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
