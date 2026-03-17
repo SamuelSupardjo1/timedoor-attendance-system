@@ -1,21 +1,14 @@
 const lessonModel = require("../models/lessonModel");
 
+const { createLesson: createLessonModel } = require("../models/lessonModel");
+
 const createLesson = async (req, res) => {
   try {
-    const { course_id, teacher_id, lesson_number, date, attendance_code } = req.body;
-
-    const lesson = await lessonModel.createLesson(
-      course_id,
-      teacher_id,
-      lesson_number,
-      date,
-      attendance_code
-    );
-
-    res.json(lesson);
+    const { course_id, lesson_number, lesson_name } = req.body;
+    const lesson = await createLessonModel(course_id, lesson_number, lesson_name);
+    res.status(201).json(lesson);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    res.status(500).json({ error: err.message });
   }
 };
 

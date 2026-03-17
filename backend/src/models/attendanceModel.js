@@ -1,11 +1,11 @@
 const pool = require("../config/db");
 
-const markAttendance = async (student_id, lesson_id, status) => {
+const markAttendance = async (student_id, meeting_id , status) => {
   const result = await pool.query(
-    `INSERT INTO attendance (student_id, lesson_id, status, created_at)
+    `INSERT INTO attendance (student_id, meeting_id , status, created_at)
      VALUES ($1,$2,$3,NOW())
      RETURNING *`,
-    [student_id, lesson_id, status]
+    [student_id, meeting_id , status]
   );
 
   return result.rows[0];

@@ -1,11 +1,11 @@
 const pool = require("../config/db");
 
-const createLesson = async (course_id, teacher_id, lesson_number, date, attendance_code) => {
+const createLesson = async (course_id, lesson_number, lesson_name) => {
   const result = await pool.query(
-    `INSERT INTO lessons (course_id, teacher_id, lesson_number, date, attendance_code)
-     VALUES ($1,$2,$3,$4,$5)
+    `INSERT INTO lessons (course_id, lesson_number, lesson_name)
+     VALUES ($1, $2, $3)
      RETURNING *`,
-    [course_id, teacher_id, lesson_number, date, attendance_code]
+    [course_id, lesson_number, lesson_name]
   );
 
   return result.rows[0];

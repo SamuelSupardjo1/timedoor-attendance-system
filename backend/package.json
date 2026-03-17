@@ -6,7 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "setup-db": "node database/setup.js"
+    "db:reset": "node database/database.js reset",
+    "db:setup": "node database/database.js setup",
+    "db:drop": "node database/database.js drop",
+    "db:all": "node database/database.js all",
+    "db:seed": "node database/seed.js"
   },
   "keywords": [],
   "author": "",

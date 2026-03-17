@@ -2,11 +2,11 @@ const attendanceModel = require("../models/attendanceModel");
 
 const markAttendance = async (req, res) => {
   try {
-    const { student_id, lesson_id, status } = req.body;
+    const { student_id, meeting_id , status } = req.body;
 
     const attendance = await attendanceModel.markAttendance(
       student_id,
-      lesson_id,
+      meeting_id ,
       status
     );
 

@@ -1,11 +1,11 @@
-const lessonFeedbackModel = require("../models/lessonFeedbackModel");
+const lessonFeedbackModel = require("../models/meetingFeedbackModel");
 
 const createFeedback = async (req, res) => {
   try {
-    const { lesson_id, student_id, teacher_id, feedback, media_url } = req.body;
+    const { meeting_id , student_id, teacher_id, feedback, media_url } = req.body;
 
     const result = await lessonFeedbackModel.createFeedback(
-      lesson_id,
+      meeting_id ,
       student_id,
       teacher_id,
       feedback,
@@ -33,3 +33,4 @@ module.exports = {
   createFeedback,
   getFeedback
 };
+
