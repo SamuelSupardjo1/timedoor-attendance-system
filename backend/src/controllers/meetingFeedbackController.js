@@ -1,10 +1,10 @@
-const lessonFeedbackModel = require("../models/meetingFeedbackModel");
+const meetingFeedbackModel = require("../models/meetingFeedbackModel");
 
 const createFeedback = async (req, res) => {
   try {
     const { meeting_id , student_id, teacher_id, feedback, media_url } = req.body;
 
-    const result = await lessonFeedbackModel.createFeedback(
+    const result = await meetingFeedbackModel.createFeedback(
       meeting_id ,
       student_id,
       teacher_id,
@@ -21,7 +21,7 @@ const createFeedback = async (req, res) => {
 
 const getFeedback = async (req, res) => {
   try {
-    const feedback = await lessonFeedbackModel.getFeedback();
+    const feedback = await meetingFeedbackModel.getFeedback();
     res.json(feedback);
   } catch (err) {
     console.error(err);
