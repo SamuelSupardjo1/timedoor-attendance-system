@@ -5,5 +5,8 @@ const meetingFeedbackController = require("../controllers/meetingFeedbackControl
 
 router.post("/", meetingFeedbackController.createFeedback);
 router.get("/", meetingFeedbackController.getFeedback);
+router.get("/:id", meetingFeedbackController.getFeedbackById);
+router.put("/:id", meetingFeedbackController.updateFeedback);
+router.delete("/:id", meetingFeedbackController.deleteFeedback);
 
 module.exports = router;

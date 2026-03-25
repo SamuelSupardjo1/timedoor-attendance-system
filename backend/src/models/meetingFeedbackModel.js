@@ -16,7 +16,39 @@ const getFeedback = async () => {
   return result.rows;
 };
 
+const getFeedbackById = async (id) => {
+  const result = await pool.query(
+    `SELECT meeting_feedback.*, meetings.date, students.user_id AS student_user_id, teachers.user_id AS teacher_user_id
+     FROM meeting_feedback
+     JOIN meetings ON meeting_feedback.meeting_id = meetings.id
+     JOIN students ON meeting_feedback.student_id = students.id
+     JOIN teachers ON meeting_feedback.teacher_id = teachers.id
+     WHERE meeting_feedback.id = $1`,
+    [id]
+  );
+  return result.rows[0];
+};
+
+const updateFeedback = async (id, feedback, media_url) => {
+  const result = await pool.query(
+    `UPDATE meeting_feedback SET feedback = $1, media_url = $2 WHERE id = $3 RETURNING *`,
+    [feedback, media_url, id]
+  );
+  return result.rows[0];
+};
+
+const deleteFeedback = async (id) => {
+  const result = await pool.query(
+    `DELETE FROM meeting_feedback WHERE id = $1 RETURNING *`,
+    [id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createFeedback,
-  getFeedback
+  getFeedback,
+  getFeedbackById,
+  updateFeedback,
+  deleteFeedback
 };

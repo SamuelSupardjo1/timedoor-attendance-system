@@ -29,8 +29,42 @@ const getFeedback = async (req, res) => {
   }
 };
 
+const getFeedbackById = async (req, res) => {
+  try {
+    const feedback = await meetingFeedbackModel.getFeedbackById(req.params.id);
+    if (!feedback) return res.status(404).json({ message: "Feedback not found" });
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const updateFeedback = async (req, res) => {
+  try {
+    const { feedback, media_url } = req.body;
+    const result = await meetingFeedbackModel.updateFeedback(req.params.id, feedback, media_url);
+    if (!result) return res.status(404).json({ message: "Feedback not found" });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const deleteFeedback = async (req, res) => {
+  try {
+    const feedback = await meetingFeedbackModel.deleteFeedback(req.params.id);
+    if (!feedback) return res.status(404).json({ message: "Feedback not found" });
+    res.json({ message: "Feedback deleted", feedback });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   createFeedback,
-  getFeedback
+  getFeedback,
+  getFeedbackById,
+  updateFeedback,
+  deleteFeedback  
 };
 
