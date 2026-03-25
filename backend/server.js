@@ -1,4 +1,6 @@
+require("dotenv").config();
 const express = require("express");
+
 const userRoutes = require("./src/routes/userRoutes");
 const studentRoutes = require("./src/routes/studentRoutes");
 const teacherRoutes = require("./src/routes/teacherRoutes");
@@ -7,6 +9,7 @@ const lessonRoutes = require("./src/routes/lessonRoutes");
 const attendanceRoutes = require("./src/routes/attendanceRoutes");
 const meetingFeedbackRoutes = require("./src/routes/meetingFeedbackRoutes");
 const meetingRoutes = require("./src/routes/meetingRoutes");
+const authRoutes = require("./src/routes/authRoutes");
 
 const app = express();
 app.use(express.json());
@@ -19,6 +22,7 @@ app.use("/lessons", lessonRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/meeting-feedback", meetingFeedbackRoutes);
 app.use("/meetings", meetingRoutes);
+app.use("/auth", authRoutes);
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
