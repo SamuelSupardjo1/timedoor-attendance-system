@@ -2,6 +2,17 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authModel = require("../models/authModel");
 
+
+const getMe = async (req, res) => {
+  try {
+    const user = await authModel.getUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 const register = async (req, res) => {
   try {
     const { name, email, password, role, parent_id } = req.body;
@@ -39,4 +50,4 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+module.exports = {register, login, getMe};
