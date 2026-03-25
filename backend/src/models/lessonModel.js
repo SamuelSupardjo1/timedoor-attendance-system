@@ -21,7 +21,37 @@ const getLessons = async () => {
   return result.rows;
 };
 
+const getLessonById = async (id) => {
+  const result = await pool.query(
+    `SELECT lessons.*, courses.course_name
+     FROM lessons
+     JOIN courses ON lessons.course_id = courses.id
+     WHERE lessons.id = $1`,
+    [id]
+  );
+  return result.rows[0];
+};
+
+const updateLesson = async (id, course_id, lesson_number, lesson_name) => {
+  const result = await pool.query(
+    `UPDATE lessons SET course_id = $1, lesson_number = $2, lesson_name = $3 WHERE id = $4 RETURNING *`,
+    [course_id, lesson_number, lesson_name, id]
+  );
+  return result.rows[0];
+};
+
+const deleteLesson = async (id) => {
+  const result = await pool.query(
+    `DELETE FROM lessons WHERE id = $1 RETURNING *`,
+    [id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createLesson,
-  getLessons
+  getLessons,
+  getLessonById,
+  updateLesson,
+  deleteLesson 
 };
