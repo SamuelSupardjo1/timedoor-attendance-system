@@ -24,7 +24,41 @@ const getCourses = async (req, res) => {
   }
 };
 
+const getCourseById = async (req, res) => {
+  try {
+    const course = await courseModel.getCourseById(req.params.id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+    res.json(course);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const updateCourse = async (req, res) => {
+  try {
+    const { course_name, description } = req.body;
+    const course = await courseModel.updateCourse(req.params.id, course_name, description);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+    res.json(course);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const deleteCourse = async (req, res) => {
+  try {
+    const course = await courseModel.deleteCourse(req.params.id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+    res.json({ message: "Course deleted", course });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   createCourse,
-  getCourses
+  getCourses,
+  getCourseById,
+  updateCourse,
+  deleteCourse
 };

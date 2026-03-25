@@ -17,7 +17,34 @@ const getCourses = async () => {
   return result.rows;
 };
 
+const getCourseById = async (id) => {
+  const result = await pool.query(
+    `SELECT * FROM courses WHERE id = $1`,
+    [id]
+  );
+  return result.rows[0];
+};
+
+const updateCourse = async (id, course_name, description) => {
+  const result = await pool.query(
+    `UPDATE courses SET course_name = $1, description = $2 WHERE id = $3 RETURNING *`,
+    [course_name, description, id]
+  );
+  return result.rows[0];
+};
+
+const deleteCourse = async (id) => {
+  const result = await pool.query(
+    `DELETE FROM courses WHERE id = $1 RETURNING *`,
+    [id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createCourse,
-  getCourses
+  getCourses,
+  getCourseById,
+  updateCourse,
+  deleteCourse
 };
