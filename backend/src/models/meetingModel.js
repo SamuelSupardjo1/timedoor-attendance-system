@@ -29,7 +29,48 @@ const getMeetings = async () => {
   return result.rows;
 };
 
+const getMeetingById = async (id) => {
+  const result = await pool.query(`
+    SELECT 
+      meetings.*,
+      lessons.lesson_name,
+      lessons.lesson_number,
+      users.name AS teacher_name
+    FROM meetings
+    JOIN lessons ON meetings.lesson_id = lessons.id
+    JOIN teachers ON meetings.teacher_id = teachers.id
+    JOIN users ON teachers.user_id = users.id
+    WHERE meetings.id = $1
+  `, [id]);
+
+  return result.rows[0];
+};
+
+const updateMeeting = async (id, lesson_id, teacher_id, date) => {
+  const result = await pool.query(
+    `UPDATE meetings
+     SET lesson_id = $1, teacher_id = $2, date = $3
+     WHERE id = $4
+     RETURNING *`,
+    [lesson_id, teacher_id, date, id]
+  );
+
+  return result.rows[0];
+};
+
+const deleteMeeting = async (id) => {
+  const result = await pool.query(
+    `DELETE FROM meetings WHERE id = $1 RETURNING *`,
+    [id]
+  );
+
+  return result.rows[0];
+};
+
 module.exports = {
   createMeeting,
   getMeetings,
+  getMeetingById,
+  updateMeeting,
+  deleteMeeting
 };

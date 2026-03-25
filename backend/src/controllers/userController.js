@@ -11,14 +11,14 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, role, parent_id } = req.body;
 
-    const newUser = await userModel.createUser(name, email, role);
+    const newUser = await userModel.createUser(name, email, role, parent_id);
 
-    res.json(newUser);
+    res.status(201).json(newUser);
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server error");
+    res.status(500).json({ error: err.message });
   }
 }
 
