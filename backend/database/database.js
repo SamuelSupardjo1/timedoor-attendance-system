@@ -61,7 +61,7 @@ async function main() {
       await dropAll();      
       await setupDatabase(); 
     } else {
-      console.log("❗ Use: node database.js [reset|setup|drop|all]");
+      console.log("❗ Use: npm run db:[reset|setup|drop|all]");
     }
 
     await client.end();

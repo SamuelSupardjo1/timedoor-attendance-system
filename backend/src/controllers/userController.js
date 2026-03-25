@@ -22,4 +22,35 @@ const createUser = async (req, res) => {
   }
 }
 
-module.exports = { getUsers, createUser };
+const getUserById = async (req, res) => {
+  try {
+    const user = await userModel.getUserById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const { name, email, role } = req.body;
+    const user = await userModel.updateUser(req.params.id, name, email, role);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const user = await userModel.deleteUser(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User deleted", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { getUsers, createUser, getUserById, updateUser, deleteUser };
