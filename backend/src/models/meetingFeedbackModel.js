@@ -11,7 +11,7 @@ const createFeedback = async (meeting_id , student_id, teacher_id, feedback, med
   return result.rows[0];
 };
 
-const getFeedback = async () => {
+const getFeedbacks = async () => {
   const result = await pool.query("SELECT * FROM meeting_feedback");
   return result.rows;
 };
@@ -47,7 +47,7 @@ const deleteFeedback = async (id) => {
 
 module.exports = {
   createFeedback,
-  getFeedback,
+  getFeedbacks,
   getFeedbackById,
   updateFeedback,
   deleteFeedback

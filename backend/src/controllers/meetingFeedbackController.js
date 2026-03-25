@@ -19,9 +19,9 @@ const createFeedback = async (req, res) => {
   }
 };
 
-const getFeedback = async (req, res) => {
+const getFeedbacks = async (req, res) => {
   try {
-    const feedback = await meetingFeedbackModel.getFeedback();
+    const feedback = await meetingFeedbackModel.getFeedbacks();
     res.json(feedback);
   } catch (err) {
     console.error(err);
@@ -62,7 +62,7 @@ const deleteFeedback = async (req, res) => {
 
 module.exports = {
   createFeedback,
-  getFeedback,
+  getFeedbacks,
   getFeedbackById,
   updateFeedback,
   deleteFeedback  
