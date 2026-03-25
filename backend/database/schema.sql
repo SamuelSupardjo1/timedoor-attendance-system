@@ -4,7 +4,7 @@ CREATE TABLE users (
   name VARCHAR(100),
   email VARCHAR(100) UNIQUE,
   password TEXT,
-  role VARCHAR(20) CHECK (role IN ('student', 'teacher', 'parent'))
+  role VARCHAR(20) CHECK (role IN ('student', 'teacher', 'parent', 'admin'))
 );
 
 -- STUDENTS

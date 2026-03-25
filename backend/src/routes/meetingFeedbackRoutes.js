@@ -3,10 +3,10 @@ const router = express.Router();
 
 const meetingFeedbackController = require("../controllers/meetingFeedbackController");
 
-router.post("/", meetingFeedbackController.createFeedback);
-router.get("/", meetingFeedbackController.getFeedback);
-router.get("/:id", meetingFeedbackController.getFeedbackById);
-router.put("/:id", meetingFeedbackController.updateFeedback);
-router.delete("/:id", meetingFeedbackController.deleteFeedback);
+router.get("/", authenticate, authorizeRoles("admin", "teacher", "student", "parent"), meetingFeedbackController.getFeedbacks);
+router.get("/:id", authenticate, authorizeRoles("admin", "teacher", "student", "parent"), meetingFeedbackController.getFeedbackById);
+router.post("/", authenticate, authorizeRoles("admin", "teacher"), meetingFeedbackController.createFeedback);
+router.put("/:id", authenticate, authorizeRoles("admin", "teacher"), meetingFeedbackController.updateFeedback);
+router.delete("/:id", authenticate, authorizeRoles("admin"), meetingFeedbackController.deleteFeedback);
 
 module.exports = router;

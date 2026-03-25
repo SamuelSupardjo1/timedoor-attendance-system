@@ -3,10 +3,10 @@ const router = express.Router();
 
 const lessonController = require("../controllers/lessonController");
 
-router.post("/", lessonController.createLesson);
-router.get("/", lessonController.getLessons);
-router.get("/:id", lessonController.getLessonById);
-router.put("/:id", lessonController.updateLesson);
-router.delete("/:id", lessonController.deleteLesson);
+router.get("/", authenticate, authorizeRoles("admin", "teacher"), lessonController.getLessons);
+router.get("/:id", authenticate, authorizeRoles("admin", "teacher"), lessonController.getLessonById);
+router.post("/", authenticate, authorizeRoles("admin", "teacher"), lessonController.createLesson);
+router.put("/:id", authenticate, authorizeRoles("admin", "teacher"), lessonController.updateLesson);
+router.delete("/:id", authenticate, authorizeRoles("admin"), lessonController.deleteLesson);
 
-module.exports = router;
+module.exports = router;    
