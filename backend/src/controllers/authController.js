@@ -3,17 +3,17 @@ const jwt = require("jsonwebtoken");
 const authModel = require("../models/authModel");
 
 
-const getMe = async (req, res) => {
+const getMe = async (req, res, next) => {
   try {
     const user = await authModel.getUserById(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const { name, email, password, role, parent_id } = req.body;
 
@@ -24,11 +24,11 @@ const register = async (req, res) => {
     const user = await authModel.createUser(name, email, hashedPassword, role, parent_id);
     res.status(201).json({ message: "User registered", user });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -46,7 +46,7 @@ const login = async (req, res) => {
 
     res.json({ message: "Login successful", token });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 

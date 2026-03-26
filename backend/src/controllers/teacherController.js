@@ -24,34 +24,34 @@ const getTeachers = async (req, res) => {
   }
 };
 
-const getTeacherById = async (req, res) => {
+const getTeacherById = async (req, res, next) => {
   try {
     const teacher = await teacherModel.getTeacherById(req.params.id);
     if (!teacher) return res.status(404).json({ message: "Teacher not found" });
     res.json(teacher);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-const updateTeacher = async (req, res) => {
+const updateTeacher = async (req, res, next) => {
   try {
     const { user_id } = req.body;
     const teacher = await teacherModel.updateTeacher(req.params.id, user_id);
     if (!teacher) return res.status(404).json({ message: "Teacher not found" });
     res.json(teacher);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-const deleteTeacher = async (req, res) => {
+const deleteTeacher = async (req, res, next) => {
   try {
     const teacher = await teacherModel.deleteTeacher(req.params.id);
     if (!teacher) return res.status(404).json({ message: "Teacher not found" });
     res.json({ message: "Teacher deleted", teacher });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 

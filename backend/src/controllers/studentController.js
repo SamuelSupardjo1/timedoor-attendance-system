@@ -24,34 +24,34 @@ const getStudents = async (req, res) => {
   }
 };
 
-const getStudentById = async (req, res) => {
+const getStudentById = async (req, res, next) => {
   try {
     const student = await studentModel.getStudentById(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found" });
     res.json(student);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-const updateStudent = async (req, res) => {
+const updateStudent = async (req, res, next) => {
   try {
     const { user_id, parent_id } = req.body;
     const student = await studentModel.updateStudent(req.params.id, user_id, parent_id);
     if (!student) return res.status(404).json({ message: "Student not found" });
     res.json(student);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-const deleteStudent = async (req, res) => {
+const deleteStudent = async (req, res, next) => {
   try {
     const student = await studentModel.deleteStudent(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found" });
     res.json({ message: "Student deleted", student });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 

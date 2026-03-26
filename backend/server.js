@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const errorHandler = require("./src/middleware/errorHandler");
 
 const userRoutes = require("./src/routes/userRoutes");
 const studentRoutes = require("./src/routes/studentRoutes");
@@ -23,6 +24,7 @@ app.use("/attendance", attendanceRoutes);
 app.use("/meeting-feedback", meetingFeedbackRoutes);
 app.use("/meetings", meetingRoutes);
 app.use("/auth", authRoutes);
+app.use(errorHandler);
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
