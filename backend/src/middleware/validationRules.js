@@ -16,6 +16,7 @@ const userRules = [
   body("name").notEmpty().withMessage("Name is required"),
   body("email").isEmail().withMessage("Valid email is required"),
   body("role").isIn(["student", "teacher", "parent", "admin"]).withMessage("Invalid role"),
+  body("password").optional().isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
 ];
 
 const studentRules = [

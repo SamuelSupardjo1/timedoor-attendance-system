@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 const pool = require("../config/db");
 
 const getAllUsers = async () => {
@@ -35,14 +36,20 @@ const getUserById = async (id) => {
   return result.rows[0];
 };
 
-const updateUser = async (id, name, email, role) => {
-  const result = await pool.query(
-    `UPDATE users
-     SET name = $1, email = $2, role = $3
-     WHERE id = $4
-     RETURNING *`,
-    [name, email, role, id]
-  );
+const updateUser = async (id, name, email, role, password = null) => {
+  let query;
+  let params;
+
+  if (password) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    query = `UPDATE users SET name = $1, email = $2, role = $3, password = $4 WHERE id = $5 RETURNING id, name, email, role`;
+    params = [name, email, role, hashedPassword, id];
+  } else {
+    query = `UPDATE users SET name = $1, email = $2, role = $3 WHERE id = $4 RETURNING id, name, email, role`;
+    params = [name, email, role, id];
+  }
+
+  const result = await pool.query(query, params);
   return result.rows[0];
 };
 
