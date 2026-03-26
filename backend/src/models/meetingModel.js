@@ -13,7 +13,8 @@ const createMeeting = async (lesson_id, teacher_id, date) => {
   return result.rows[0];
 };
 
-const getMeetings = async () => {
+const getMeetings = async (page = 1, limit = 10) => {
+  const offset = (page - 1) * limit;
   const result = await pool.query(`
     SELECT 
       meetings.*,
@@ -24,9 +25,18 @@ const getMeetings = async () => {
     JOIN lessons ON meetings.lesson_id = lessons.id
     JOIN teachers ON meetings.teacher_id = teachers.id
     JOIN users ON teachers.user_id = users.id
-  `);
-
-  return result.rows;
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
+  const total = await pool.query(`SELECT COUNT(*) FROM meetings`);
+  return {
+    data: result.rows,
+    meta: {
+      total: parseInt(total.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total.rows[0].count / limit)
+    }
+  };
 };
 
 const getMeetingById = async (id) => {

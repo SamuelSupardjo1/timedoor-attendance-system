@@ -17,13 +17,13 @@ const markAttendance = async (req, res) => {
   }
 };
 
-const getAttendance = async (req, res) => {
+const getAttendance = async (req, res, next) => {
   try {
-    const attendance = await attendanceModel.getAttendance();
+    const { page = 1, limit = 10 } = req.query;
+    const attendance = await attendanceModel.getAttendance(page, limit);
     res.json(attendance);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 

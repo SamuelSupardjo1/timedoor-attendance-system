@@ -11,14 +11,24 @@ const markAttendance = async (student_id, meeting_id , status) => {
   return result.rows[0];
 };
 
-const getAttendance = async () => {
+const getAttendance = async (page = 1, limit = 10) => {
+  const offset = (page - 1) * limit;
   const result = await pool.query(`
     SELECT attendance.*, students.id AS student
     FROM attendance
     JOIN students ON attendance.student_id = students.id
-  `);
-
-  return result.rows;
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
+  const total = await pool.query(`SELECT COUNT(*) FROM attendance`);
+  return {
+    data: result.rows,
+    meta: {
+      total: parseInt(total.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total.rows[0].count / limit)
+    }
+  };
 };
 
 const getAttendanceById = async (id) => {

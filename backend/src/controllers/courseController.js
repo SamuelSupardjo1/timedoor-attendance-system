@@ -13,14 +13,13 @@ const createCourse = async (req, res) => {
   }
 };
 
-const getCourses = async (req, res) => {
+const getCourses = async (req, res, next) => {
   try {
-    const courses = await courseModel.getCourses();
-
+    const { page = 1, limit = 10 } = req.query;
+    const courses = await courseModel.getCourses(page, limit);
     res.json(courses);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 

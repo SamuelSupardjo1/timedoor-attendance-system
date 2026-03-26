@@ -12,13 +12,13 @@ const createLesson = async (req, res, next) => {
   }
 };
 
-const getLessons = async (req, res) => {
+const getLessons = async (req, res, next) => {
   try {
-    const lessons = await lessonModel.getLessons();
+    const { page = 1, limit = 10 } = req.query;
+    const lessons = await lessonModel.getLessons(page, limit);
     res.json(lessons);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 

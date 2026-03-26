@@ -11,14 +11,24 @@ const createLesson = async (course_id, lesson_number, lesson_name) => {
   return result.rows[0];
 };
 
-const getLessons = async () => {
+const getLessons = async (page = 1, limit = 10) => {
+  const offset = (page - 1) * limit;
   const result = await pool.query(`
     SELECT lessons.*, courses.course_name
     FROM lessons
     JOIN courses ON lessons.course_id = courses.id
-  `);
-
-  return result.rows;
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
+  const total = await pool.query(`SELECT COUNT(*) FROM lessons`);
+  return {
+    data: result.rows,
+    meta: {
+      total: parseInt(total.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total.rows[0].count / limit)
+    }
+  };
 };
 
 const getLessonById = async (id) => {

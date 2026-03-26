@@ -13,14 +13,13 @@ const createTeacher = async (req, res) => {
   }
 };
 
-const getTeachers = async (req, res) => {
+const getTeachers = async (req, res, next) => {
   try {
-    const teachers = await teacherModel.getTeachers();
-
+    const { page = 1, limit = 10 } = req.query;
+    const teachers = await teacherModel.getTeachers(page, limit);
     res.json(teachers);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 

@@ -9,12 +9,22 @@ const createCourse = async (course_name, description) => {
   return result.rows[0];
 };
 
-const getCourses = async () => {
+const getCourses = async (page = 1, limit = 10) => {
+  const offset = (page - 1) * limit;
   const result = await pool.query(
-    "SELECT * FROM courses"
+    `SELECT * FROM courses LIMIT $1 OFFSET $2`,
+    [limit, offset]
   );
-
-  return result.rows;
+  const total = await pool.query(`SELECT COUNT(*) FROM courses`);
+  return {
+    data: result.rows,
+    meta: {
+      total: parseInt(total.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total.rows[0].count / limit)
+    }
+  };
 };
 
 const getCourseById = async (id) => {

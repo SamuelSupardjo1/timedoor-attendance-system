@@ -11,13 +11,13 @@ const createMeeting = async (req, res) => {
   }
 };
 
-const getMeetings = async (req, res) => {
+const getMeetings = async (req, res, next) => {
   try {
-    const meetings = await meetingModel.getMeetings();
+    const { page = 1, limit = 10 } = req.query;
+    const meetings = await meetingModel.getMeetings(page, limit);
     res.json(meetings);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 

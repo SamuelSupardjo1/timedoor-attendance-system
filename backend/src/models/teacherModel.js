@@ -9,14 +9,24 @@ const createTeacher = async (user_id) => {
   return result.rows[0];
 };
 
-const getTeachers = async () => {
+const getTeachers = async (page = 1, limit = 10) => {
+  const offset = (page - 1) * limit;
   const result = await pool.query(`
-    SELECT teachers.*, users.name, users.email
+    SELECT teachers.id, teachers.user_id, users.name, users.email
     FROM teachers
     JOIN users ON teachers.user_id = users.id
-  `);
-
-  return result.rows;
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
+  const total = await pool.query(`SELECT COUNT(*) FROM teachers`);
+  return {
+    data: result.rows,
+    meta: {
+      total: parseInt(total.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total.rows[0].count / limit)
+    }
+  };
 };
 
 const getTeacherById = async (id) => {

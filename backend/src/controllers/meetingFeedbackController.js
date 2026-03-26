@@ -19,13 +19,13 @@ const createFeedback = async (req, res) => {
   }
 };
 
-const getFeedbacks = async (req, res) => {
+const getFeedbacks = async (req, res, next) => {
   try {
-    const feedback = await meetingFeedbackModel.getFeedbacks();
-    res.json(feedback);
+    const { page = 1, limit = 10 } = req.query;
+    const feedbacks = await meetingFeedbackModel.getFeedbacks(page, limit);
+    res.json(feedbacks);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 

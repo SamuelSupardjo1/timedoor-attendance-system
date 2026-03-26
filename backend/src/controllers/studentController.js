@@ -13,14 +13,13 @@ const createStudent = async (req, res) => {
   }
 };
 
-const getStudents = async (req, res) => {
+const getStudents = async (req, res, next) => {
   try {
-    const students = await studentModel.getStudents();
-
+    const { page = 1, limit = 10 } = req.query;
+    const students = await studentModel.getStudents(page, limit);
     res.json(students);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 

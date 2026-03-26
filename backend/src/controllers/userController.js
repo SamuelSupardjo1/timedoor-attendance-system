@@ -2,7 +2,8 @@ const userModel = require("../models/userModel");
 
 const getUsers = async (req, res, next) => {
   try {
-    const users = await userModel.getAllUsers();
+    const { page = 1, limit = 10 } = req.query;
+    const users = await userModel.getAllUsers(page, limit);
     res.json(users);
   } catch (err) {
     next(err);

@@ -11,9 +11,26 @@ const createFeedback = async (meeting_id , student_id, teacher_id, feedback, med
   return result.rows[0];
 };
 
-const getFeedbacks = async () => {
-  const result = await pool.query("SELECT * FROM meeting_feedback");
-  return result.rows;
+const getFeedbacks = async (page = 1, limit = 10) => {
+  const offset = (page - 1) * limit;
+  const result = await pool.query(`
+    SELECT meeting_feedback.*, meetings.date, students.user_id AS student_user_id, teachers.user_id AS teacher_user_id
+    FROM meeting_feedback
+    JOIN meetings ON meeting_feedback.meeting_id = meetings.id
+    JOIN students ON meeting_feedback.student_id = students.id
+    JOIN teachers ON meeting_feedback.teacher_id = teachers.id
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
+  const total = await pool.query(`SELECT COUNT(*) FROM meeting_feedback`);
+  return {
+    data: result.rows,
+    meta: {
+      total: parseInt(total.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total.rows[0].count / limit)
+    }
+  };
 };
 
 const getFeedbackById = async (id) => {
