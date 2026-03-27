@@ -1,3 +1,4 @@
+const cors = require("cors");
 require("dotenv").config();
 const express = require("express");
 const errorHandler = require("./src/middleware/errorHandler");
@@ -14,6 +15,11 @@ const authRoutes = require("./src/routes/authRoutes");
 
 const app = express();
 app.use(express.json());
+
+app.use(cors({
+  origin: "http://localhost:5174",
+  credentials: true
+}));
 
 app.use("/users", userRoutes);
 app.use("/students", studentRoutes);
