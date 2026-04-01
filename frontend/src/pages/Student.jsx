@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import api from "../api/axios";
 import { MdAdd, MdSearch, MdEdit, MdDelete } from "react-icons/md";
+import EditStudentModal from "../components/EditStudentModal";
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -9,6 +10,7 @@ const Students = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editStudent, setEditStudent] = useState(null);
 
   const fetchStudents = async () => {
     try {
@@ -110,7 +112,10 @@ const Students = () => {
                   <td className="px-6 py-4 text-sm text-gray-500">{student.parent_name || "—"}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition">
+                      <button
+                        onClick={() => setEditStudent(student)}
+                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                        >
                         <MdEdit size={16} />
                       </button>
                       <button
@@ -150,6 +155,13 @@ const Students = () => {
           </div>
         </div>
       </div>
+      {editStudent && (
+        <EditStudentModal
+            student={editStudent}
+            onClose={() => setEditStudent(null)}
+            onSuccess={fetchStudents}
+        />
+      )}
     </Layout>
   );
 };

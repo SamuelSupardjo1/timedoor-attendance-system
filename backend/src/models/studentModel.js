@@ -75,7 +75,7 @@ const deleteStudent = async (id) => {
   );
 
   return result.rows[0];
-};x
+};
 
 module.exports = {
   createStudent,
