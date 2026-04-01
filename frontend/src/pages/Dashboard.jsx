@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import { MdMeetingRoom, MdPeople, MdFeedback, MdLogout } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 const StatCard = ({ label, value, color }) => (
   <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -13,6 +14,7 @@ const StatCard = ({ label, value, color }) => (
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     students: 0,
     teachers: 0,
@@ -74,7 +76,8 @@ const Dashboard = () => {
           ].map((action) => (
             <button
               key={action.label}
-              className={`${action.color} rounded-xl p-4 flex flex-col items-center gap-2 text-sm font-medium hover:opacity-80 transition`}
+              onClick={() => navigate(action.path)}
+              className={`${action.color} rounded-xl p-4 flex flex-col items-center gap-2 text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md`}
             >
               <span className="text-2xl">{action.icon}</span>
               {action.label}

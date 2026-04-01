@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import api from "../api/axios";
 import { MdAdd, MdSearch, MdEdit, MdDelete } from "react-icons/md";
 import EditStudentModal from "../components/EditStudentModal";
+import AddStudentModal from "../components/AddStudentModal";
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -11,6 +12,7 @@ const Students = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [editStudent, setEditStudent] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchStudents = async () => {
     try {
@@ -52,8 +54,11 @@ const Students = () => {
           <h1 className="text-3xl font-bold text-gray-800">Students Directory</h1>
           <p className="text-gray-400 mt-1">Manage your active roster and track attendance</p>
         </div>
-        <button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition">
-          <MdAdd size={18} /> Add Student
+        <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+            >
+            <MdAdd size={18} /> Add Student
         </button>
       </div>
 
@@ -159,6 +164,12 @@ const Students = () => {
         <EditStudentModal
             student={editStudent}
             onClose={() => setEditStudent(null)}
+            onSuccess={fetchStudents}
+        />
+      )}
+      {showAddModal && (
+        <AddStudentModal
+            onClose={() => setShowAddModal(false)}
             onSuccess={fetchStudents}
         />
       )}
