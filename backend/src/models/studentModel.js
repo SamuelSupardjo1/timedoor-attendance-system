@@ -51,12 +51,31 @@ const updateStudent = async (id, user_id, parent_id) => {
 };
 
 const deleteStudent = async (id) => {
-  const result = await pool.query(
-    `DELETE FROM students WHERE id = $1 RETURNING *`,
+  // first get the user_id
+  const student = await pool.query(
+    `SELECT user_id FROM students WHERE id = $1`,
     [id]
   );
+
+  if (!student.rows[0]) return null;
+
+  const user_id = student.rows[0].user_id;
+
+  // delete related records first
+  await pool.query(`DELETE FROM meeting_feedback WHERE student_id = $1`, [id]);
+  await pool.query(`DELETE FROM attendance WHERE student_id = $1`, [id]);
+
+  // then delete student
+  await pool.query(`DELETE FROM students WHERE id = $1`, [id]);
+
+  // then delete user
+  const result = await pool.query(
+    `DELETE FROM users WHERE id = $1 RETURNING *`,
+    [user_id]
+  );
+
   return result.rows[0];
-};
+};x
 
 module.exports = {
   createStudent,
