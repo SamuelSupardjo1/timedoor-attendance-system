@@ -3,6 +3,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import Students from "./pages/Student";
+import Teachers from "./pages/Teachers";
 
 function App() {
   return (
@@ -25,7 +26,15 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/login" />} />
+      <Route
+        path="/teachers"
+        element={
+          <ProtectedRoute roles={["admin", "teacher"]}>
+            <Teachers />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   );
 }

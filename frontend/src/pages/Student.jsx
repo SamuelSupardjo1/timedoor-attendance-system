@@ -75,7 +75,7 @@ const Students = () => {
           />
         </div>
         <div className="bg-green-50 text-green-600 px-4 py-2.5 rounded-xl text-sm font-medium">
-          Total Active: {meta.total || 0}
+          Total Students: {meta.total || 0}
         </div>
       </div>
 

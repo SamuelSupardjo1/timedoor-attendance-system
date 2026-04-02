@@ -4,9 +4,10 @@ import { MdDashboard, MdMeetingRoom, MdChecklist, MdPeople, MdFeedback, MdLogout
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: <MdDashboard size={18} /> },
-  { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
-  { label: "Attendance", path: "/attendance", icon: <MdChecklist size={18} /> },
   { label: "Students", path: "/students", icon: <MdPeople size={18} /> },
+  { label: "Teachers", path: "/teachers", icon: <MdPeople size={18} /> },
+  { label: "Attendance", path: "/attendance", icon: <MdChecklist size={18} /> },
+  { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
   { label: "Feedback", path: "/feedback", icon: <MdFeedback size={18} /> },
 ];
 

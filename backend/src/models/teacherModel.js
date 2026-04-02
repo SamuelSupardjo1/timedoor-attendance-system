@@ -49,10 +49,22 @@ const updateTeacher = async (id, user_id) => {
 };
 
 const deleteTeacher = async (id) => {
-  const result = await pool.query(
-    `DELETE FROM teachers WHERE id = $1 RETURNING *`,
-    [id]
+  const teacher = await pool.query(
+    `SELECT user_id FROM teachers WHERE id = $1`, [id]
   );
+
+  if (!teacher.rows[0]) return null;
+
+  const user_id = teacher.rows[0].user_id;
+
+  await pool.query(`DELETE FROM meeting_feedback WHERE teacher_id = $1`, [id]);
+  await pool.query(`DELETE FROM meetings WHERE teacher_id = $1`, [id]);
+  await pool.query(`DELETE FROM teachers WHERE id = $1`, [id]);
+
+  const result = await pool.query(
+    `DELETE FROM users WHERE id = $1 RETURNING *`, [user_id]
+  );
+
   return result.rows[0];
 };
 
