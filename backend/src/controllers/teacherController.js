@@ -15,8 +15,8 @@ const createTeacher = async (req, res) => {
 
 const getTeachers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const teachers = await teacherModel.getTeachers(page, limit);
+    const { page = 1, limit = 10, search = "" } = req.query;
+    const teachers = await teacherModel.getTeachers(page, limit, search);
     res.json(teachers);
   } catch (err) {
     next(err);

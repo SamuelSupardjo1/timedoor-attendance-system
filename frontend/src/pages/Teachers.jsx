@@ -16,20 +16,25 @@ const Teachers = () => {
 
   const fetchTeachers = async () => {
     try {
-      setLoading(true);
-      const res = await api.get(`/teachers?page=${page}&limit=10`);
-      setTeachers(res.data.data);
-      setMeta(res.data.meta);
+        setLoading(true);
+        const res = await api.get(`/teachers?page=${page}&limit=10&search=${search}`);
+        setTeachers(res.data.data);
+        setMeta(res.data.meta);
     } catch (err) {
-      console.error(err);
+        console.error(err);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+   };
 
   useEffect(() => {
     fetchTeachers();
-  }, [page]);
+  }, [page, search]);
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
 
   const handleDelete = async (id, user_id) => {
     if (!confirm("Are you sure you want to delete this teacher?")) return;
@@ -69,7 +74,7 @@ const Teachers = () => {
             type="text"
             placeholder="Search teachers..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearch }
             className="outline-none text-sm text-gray-700 w-full"
           />
         </div>
@@ -93,12 +98,12 @@ const Teachers = () => {
               <tr>
                 <td colSpan={3} className="text-center py-12 text-gray-400">Loading...</td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : teachers.length === 0 ? (
               <tr>
                 <td colSpan={3} className="text-center py-12 text-gray-400">No teachers found</td>
               </tr>
             ) : (
-              filtered.map((teacher) => (
+              teachers.map((teacher) => (
                 <tr key={teacher.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

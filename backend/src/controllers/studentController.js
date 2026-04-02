@@ -15,8 +15,8 @@ const createStudent = async (req, res) => {
 
 const getStudents = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const students = await studentModel.getStudents(page, limit);
+    const { page = 1, limit = 10, search = "" } = req.query;
+    const students = await studentModel.getStudents(page, limit, search);
     res.json(students);
   } catch (err) {
     next(err);

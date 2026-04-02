@@ -9,16 +9,24 @@ const createStudent = async (user_id, parent_id) => {
   return result.rows[0];
 };
 
-const getStudents = async (page = 1, limit = 10) => {
+const getStudents = async (page = 1, limit = 10, search = "") => {
   const offset = (page - 1) * limit;
+
   const result = await pool.query(`
     SELECT students.id, students.user_id, students.parent_id, users.name, users.email, parents.name AS parent_name
     FROM students
     JOIN users ON students.user_id = users.id
     LEFT JOIN users AS parents ON students.parent_id = parents.id
-    LIMIT $1 OFFSET $2
-  `, [limit, offset]);
-  const total = await pool.query(`SELECT COUNT(*) FROM students`);
+    WHERE users.name ILIKE $1 OR users.email ILIKE $1
+    LIMIT $2 OFFSET $3
+  `, [`%${search}%`, limit, offset]);
+
+  const total = await pool.query(`
+    SELECT COUNT(*) FROM students
+    JOIN users ON students.user_id = users.id
+    WHERE users.name ILIKE $1 OR users.email ILIKE $1
+  `, [`%${search}%`]);
+
   return {
     data: result.rows,
     meta: {

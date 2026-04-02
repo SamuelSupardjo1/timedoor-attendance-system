@@ -9,15 +9,23 @@ const createTeacher = async (user_id) => {
   return result.rows[0];
 };
 
-const getTeachers = async (page = 1, limit = 10) => {
+const getTeachers = async (page = 1, limit = 10, search = "") => {
   const offset = (page - 1) * limit;
+
   const result = await pool.query(`
     SELECT teachers.id, teachers.user_id, users.name, users.email
     FROM teachers
     JOIN users ON teachers.user_id = users.id
-    LIMIT $1 OFFSET $2
-  `, [limit, offset]);
-  const total = await pool.query(`SELECT COUNT(*) FROM teachers`);
+    WHERE users.name ILIKE $1 OR users.email ILIKE $1
+    LIMIT $2 OFFSET $3
+  `, [`%${search}%`, limit, offset]);
+
+  const total = await pool.query(`
+    SELECT COUNT(*) FROM teachers
+    JOIN users ON teachers.user_id = users.id
+    WHERE users.name ILIKE $1 OR users.email ILIKE $1
+  `, [`%${search}%`]);
+
   return {
     data: result.rows,
     meta: {
