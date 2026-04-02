@@ -13,8 +13,8 @@ const createMeeting = async (req, res) => {
 
 const getMeetings = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const meetings = await meetingModel.getMeetings(page, limit);
+    const { page = 1, limit = 10, search = "" } = req.query;
+    const meetings = await meetingModel.getMeetings(page, limit, search);
     res.json(meetings);
   } catch (err) {
     next(err);

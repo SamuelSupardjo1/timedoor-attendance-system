@@ -1,0 +1,207 @@
+import { useEffect, useState } from "react";
+import Layout from "../components/Layout";
+import api from "../api/axios";
+import { MdAdd, MdSearch, MdEdit, MdDelete, MdContentCopy } from "react-icons/md";
+import AddMeetingModal from "../components/AddMeetingModal";
+import EditMeetingModal from "../components/EditMeetingModal";
+
+const Meetings = () => {
+  const [meetings, setMeetings] = useState([]);
+  const [meta, setMeta] = useState({});
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editMeeting, setEditMeeting] = useState(null);
+
+  const fetchMeetings = async () => {
+  try {
+    setLoading(true);
+    const res = await api.get(`/meetings?page=${page}&limit=10&search=${search}`);
+    setMeetings(res.data.data);
+    setMeta(res.data.meta);
+    } catch (err) {
+    console.error(err);
+    } finally {
+    setLoading(false);
+    }
+  };    
+
+  useEffect(() => {
+    fetchMeetings();
+  }, [page, search]);
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this meeting?")) return;
+    try {
+      await api.delete(`/meetings/${id}`);
+      fetchMeetings();
+    } catch (err) {
+      alert(err.response?.data?.message || "Cannot delete meeting");
+    }
+  };
+
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    alert(`Copied: ${code}`);
+  };
+
+  return (
+    <Layout>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Meetings</h1>
+          <p className="text-gray-400 mt-1">Manage class meetings and attendance codes</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+        >
+          <MdAdd size={18} /> New Meeting
+        </button>
+      </div>
+
+      {/* Search + Stats */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 w-72">
+          <MdSearch size={18} className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search meetings..."
+            value={search}
+            onChange={handleSearch}
+            className="outline-none text-sm text-gray-700 w-full"
+          />
+        </div>
+        <div className="bg-purple-50 text-purple-600 px-4 py-2.5 rounded-xl text-sm font-medium">
+          Total Meetings: {meta.total || 0}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Lesson</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Teacher</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Date</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Attendance Code</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="text-center py-12 text-gray-400">Loading...</td>
+              </tr>
+            ) : meetings.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-12 text-gray-400">No meetings found</td>
+              </tr>
+            ) : (
+              meetings.map((meeting) => (
+                <tr key={meeting.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-medium text-gray-800">{meeting.lesson_name}</p>
+                    <p className="text-xs text-gray-400">Lesson #{meeting.lesson_number}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">
+                        {meeting.teacher_name?.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-sm text-gray-600">{meeting.teacher_name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {new Date(meeting.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-purple-50 text-purple-600 px-3 py-1 rounded-lg text-sm font-mono font-bold">
+                        {meeting.attendance_code}
+                      </span>
+                      <button
+                        onClick={() => handleCopyCode(meeting.attendance_code)}
+                        className="p-1.5 text-gray-400 hover:text-purple-500 hover:bg-purple-50 rounded-lg transition"
+                      >
+                        <MdContentCopy size={14} />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditMeeting(meeting)}
+                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                      >
+                        <MdEdit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(meeting.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <MdDelete size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+          <p className="text-sm text-gray-400">
+            Page {meta.page} of {meta.totalPages}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(p + 1, meta.totalPages))}
+              disabled={page === meta.totalPages}
+              className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-40 transition"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showAddModal && (
+        <AddMeetingModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={fetchMeetings}
+        />
+      )}
+      {editMeeting && (
+        <EditMeetingModal
+          meeting={editMeeting}
+          onClose={() => setEditMeeting(null)}
+          onSuccess={fetchMeetings}
+        />
+      )}
+    </Layout>
+  );
+};
+
+export default Meetings;

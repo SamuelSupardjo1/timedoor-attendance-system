@@ -4,6 +4,7 @@ import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import Students from "./pages/Student";
 import Teachers from "./pages/Teachers";
+import Meetings from "./pages/Meetings";
 
 function App() {
   return (
@@ -31,6 +32,14 @@ function App() {
         element={
           <ProtectedRoute roles={["admin", "teacher"]}>
             <Teachers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/meetings"
+        element={
+          <ProtectedRoute roles={["admin", "teacher", "student", "parent"]}>
+            <Meetings />
           </ProtectedRoute>
         }
       />
