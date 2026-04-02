@@ -5,6 +5,7 @@ import Dashboard from "./pages/dashboard";
 import Students from "./pages/Student";
 import Teachers from "./pages/Teachers";
 import Meetings from "./pages/Meetings";
+import MeetingDetail from "./pages/MeetingDetail";
 
 function App() {
   return (
@@ -44,7 +45,16 @@ function App() {
         }
       />
       <Route path="*" element={<Navigate to="/dashboard" />} />
+      <Route
+        path="/meetings/:id"
+        element={
+          <ProtectedRoute roles={["admin", "teacher", "student", "parent"]}>
+            <MeetingDetail />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
+    
   );
 }
 

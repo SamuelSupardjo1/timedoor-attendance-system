@@ -11,15 +11,27 @@ const markAttendance = async (student_id, meeting_id , status) => {
   return result.rows[0];
 };
 
-const getAttendance = async (page = 1, limit = 10) => {
+const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = null) => {
   const offset = (page - 1) * limit;
+
+  const whereClause = meeting_id
+    ? `WHERE attendance.meeting_id = ${meeting_id} AND attendance.status ILIKE '%${search}%'`
+    : `WHERE attendance.status ILIKE '%${search}%'`;
+
   const result = await pool.query(`
     SELECT attendance.*, students.id AS student
     FROM attendance
     JOIN students ON attendance.student_id = students.id
+    ${whereClause}
     LIMIT $1 OFFSET $2
   `, [limit, offset]);
-  const total = await pool.query(`SELECT COUNT(*) FROM attendance`);
+
+  const total = await pool.query(`
+    SELECT COUNT(*) FROM attendance
+    JOIN students ON attendance.student_id = students.id
+    ${whereClause}
+  `);
+
   return {
     data: result.rows,
     meta: {

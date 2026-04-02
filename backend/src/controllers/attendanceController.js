@@ -19,8 +19,8 @@ const markAttendance = async (req, res) => {
 
 const getAttendance = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const attendance = await attendanceModel.getAttendance(page, limit);
+    const { page = 1, limit = 10, search = "", meeting_id = null } = req.query;
+    const attendance = await attendanceModel.getAttendance(page, limit, search, meeting_id);
     res.json(attendance);
   } catch (err) {
     next(err);

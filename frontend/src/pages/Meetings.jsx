@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import api from "../api/axios";
-import { MdAdd, MdSearch, MdEdit, MdDelete, MdContentCopy } from "react-icons/md";
+import { MdAdd, MdSearch, MdEdit, MdDelete, MdContentCopy, MdVisibility } from "react-icons/md";
 import AddMeetingModal from "../components/AddMeetingModal";
 import EditMeetingModal from "../components/EditMeetingModal";
+import { useNavigate } from "react-router-dom";
 
 const Meetings = () => {
   const [meetings, setMeetings] = useState([]);
@@ -13,6 +14,7 @@ const Meetings = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMeeting, setEditMeeting] = useState(null);
+  const navigate = useNavigate();
 
   const fetchMeetings = async () => {
   try {
@@ -144,15 +146,21 @@ const Meetings = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setEditMeeting(meeting)}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                        className="p-2 text-blue-500 hover:bg-blue-200 rounded-lg transition"
                       >
                         <MdEdit size={16} />
                       </button>
                       <button
                         onClick={() => handleDelete(meeting.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                        className="p-2 text-red-500 hover:bg-red-200 rounded-lg transition"
                       >
                         <MdDelete size={16} />
+                      </button>
+                      <button
+                        onClick={() => navigate(`/meetings/${meeting.id}`)}
+                        className="p-2 text-green-500 hover:bg-green-200 rounded-lg transition"
+                      >
+                        <MdVisibility size={16} />
                       </button>
                     </div>
                   </td>
