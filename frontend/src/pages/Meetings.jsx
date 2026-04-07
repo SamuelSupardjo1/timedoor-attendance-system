@@ -91,11 +91,11 @@ const Meetings = () => {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Lesson</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Teacher</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Date</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Attendance Code</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Actions</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Lesson</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Teacher</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Date</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Attendance Code</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -110,11 +110,11 @@ const Meetings = () => {
             ) : (
               meetings.map((meeting) => (
                 <tr key={meeting.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-center">
                     <p className="text-sm font-medium text-gray-800">{meeting.lesson_name}</p>
                     <p className="text-xs text-gray-400">Lesson #{meeting.lesson_number}</p>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-center">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">
                         {meeting.teacher_name?.charAt(0).toUpperCase()}
@@ -122,15 +122,15 @@ const Meetings = () => {
                       <span className="text-sm text-gray-600">{meeting.teacher_name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 text-center">
                     {new Date(meeting.date).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
                     })}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center gap-2">
                       <span className="bg-purple-50 text-purple-600 px-3 py-1 rounded-lg text-sm font-mono font-bold">
                         {meeting.attendance_code}
                       </span>
@@ -142,8 +142,8 @@ const Meetings = () => {
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center gap-2">
                       <button
                         onClick={() => setEditMeeting(meeting)}
                         className="p-2 text-blue-500 hover:bg-blue-200 rounded-lg transition"

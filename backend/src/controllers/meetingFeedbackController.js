@@ -21,8 +21,8 @@ const createFeedback = async (req, res) => {
 
 const getFeedbacks = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const feedbacks = await meetingFeedbackModel.getFeedbacks(page, limit);
+    const { page = 1, limit = 10, search = "", meeting_id = null } = req.query;
+    const feedbacks = await meetingFeedbackModel.getFeedbacks(page, limit, search, meeting_id);
     res.json(feedbacks);
   } catch (err) {
     next(err);

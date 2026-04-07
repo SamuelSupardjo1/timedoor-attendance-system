@@ -88,9 +88,9 @@ const Teachers = () => {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Teacher</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Email</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Actions</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Teacher</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Email</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -105,20 +105,20 @@ const Teachers = () => {
             ) : (
               teachers.map((teacher) => (
                 <tr key={teacher.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-center">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
                         {teacher.name?.charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-800">{teacher.name}</p>
-                        <p className="text-xs text-gray-400">ID: #{teacher.id}</p>
+                        <p className="text-xs text-gray-400 text-left">ID: #{teacher.id}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{teacher.email}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-6 py-4 text-sm text-gray-500 text-center">{teacher.email}</td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center gap-2">
                       <button
                         onClick={() => setEditTeacher(teacher)}
                         className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"

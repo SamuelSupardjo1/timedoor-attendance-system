@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
-import { MdArrowBack, MdCheckCircle, MdCancel } from "react-icons/md";
+import { MdArrowBack, MdCheckCircle, MdCancel, MdAdd, MdRemoveRedEye } from "react-icons/md";
+import AddFeedbackModal from "../components/AddFeedbackModal";
 
 const MeetingDetail = () => {
   const { id } = useParams();
@@ -16,6 +17,35 @@ const MeetingDetail = () => {
   const [checkInCode, setCheckInCode] = useState("");
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [checkInMessage, setCheckInMessage] = useState(null);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedStudentFeedback, setSelectedStudentFeedback] = useState(null);
+
+  const handleUpdateAttendance = async (attendanceId, newStatus) => {
+    try {
+      await api.put(`/attendance/${attendanceId}`, { status: newStatus });
+
+      // update locally instead of re-fetching
+      setAttendance((prev) =>
+        prev.map((record) =>
+          record.id === attendanceId
+            ? { ...record, status: newStatus }
+            : record
+        )
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchFeedback = async () => {
+    try {
+      const res = await api.get(`/meeting-feedback?meeting_id=${id}&limit=100`);
+      setFeedbacks(res.data.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchMeeting = async () => {
     try {
@@ -41,6 +71,7 @@ const MeetingDetail = () => {
   useEffect(() => {
     fetchMeeting();
     fetchAttendance();
+    fetchFeedback();
   }, [id]);
 
   const handleCheckIn = async (e) => {
@@ -143,9 +174,8 @@ const MeetingDetail = () => {
             </button>
           </form>
           {checkInMessage && (
-            <div className={`mt-3 flex items-center gap-2 text-sm ${
-              checkInMessage.type === "success" ? "text-green-600" : "text-red-500"
-            }`}>
+            <div className={`mt-3 flex items-center gap-2 text-sm ${checkInMessage.type === "success" ? "text-green-600" : "text-red-500"
+              }`}>
               {checkInMessage.type === "success"
                 ? <MdCheckCircle size={18} />
                 : <MdCancel size={18} />
@@ -157,59 +187,153 @@ const MeetingDetail = () => {
       )}
 
       {/* Attendance List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800">Attendance Records</h2>
-        </div>
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Student</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Status</th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      <div className="flex gap-6 mt-6">
+        <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-800">Attendance Records</h2>
+          </div>
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <td colSpan={3} className="text-center py-12 text-gray-400">Loading...</td>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Student</th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Status</th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Time</th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Feedback</th>
               </tr>
-            ) : attendance.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="text-center py-12 text-gray-400">No attendance records yet</td>
-              </tr>
-            ) : (
-              attendance.map((record) => (
-                <tr key={record.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-sm">
-                        {record.student}
-                      </div>
-                      <p className="text-sm font-medium text-gray-800">Student #{record.student}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      record.status === "present"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-500"
-                    }`}>
-                      {record.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(record.created_at).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-12 text-gray-400">Loading...</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : attendance.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-12 text-gray-400">No attendance records yet</td>
+                </tr>
+              ) : (
+                attendance.map((record) => (
+                  <tr key={record.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-sm">
+                          {record.student}
+                        </div>
+                        <p className="text-sm font-medium text-gray-800">Student #{record.student}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {(user?.role === "teacher" || user?.role === "admin") ? (
+                        <button
+                          onClick={() => handleUpdateAttendance(
+                            record.id,
+                            record.status === "present" ? "absent" : "present"
+                          )}
+                          className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition hover:opacity-70 ${record.status === "present"
+                              ? "bg-green-100 text-green-600"
+                              : "bg-red-100 text-red-500"
+                            }`}
+                        >
+                          {record.status}
+                        </button>
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${record.status === "present"
+                            ? "bg-green-200 text-green-600"
+                            : "bg-red-200 text-red-500"
+                          }`}>
+                          {record.status}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 text-center">
+                      {new Date(record.created_at).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {(() => {
+                        const studentFeedback = feedbacks.find(
+                          (f) => f.student_id === record.student_id
+                        );
+                        return studentFeedback ? (
+                          <button
+                            onClick={() => setSelectedStudentFeedback(studentFeedback)}
+                            className="p-1.5 text-blue-500 hover:bg-blue-200 rounded-lg transition"
+                          >
+                            <MdRemoveRedEye size={16} />
+                          </button>
+                        ) : (user?.role === "teacher" || user?.role === "admin") ? (
+                          <button
+                            onClick={() => setShowFeedbackModal(true)}
+                            className="p-1.5 text-green-500 hover:bg-green-200 rounded-lg transition"
+                          >
+                            <MdAdd size={16} />
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-300">No feedback</span>
+                        );
+                      })()}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
       </div>
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <AddFeedbackModal
+          meetingId={id}
+          onClose={() => setShowFeedbackModal(false)}
+          onSuccess={fetchFeedback}
+        />
+      )}
+
+      {/* View Feedback Modal */}
+      {selectedStudentFeedback && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Student Feedback</h2>
+              <button
+                onClick={() => setSelectedStudentFeedback(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+              >
+                <MdCancel size={20} />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              "{selectedStudentFeedback.feedback}"
+            </p>
+
+            {selectedStudentFeedback.media_url && (
+              <a
+                href={selectedStudentFeedback.media_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-500 hover:underline block mb-4"
+              >
+                View Media
+              </a>
+            )}
+
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-xs">S</div>
+                <span className="text-xs text-gray-500">Student #{selectedStudentFeedback.student_id}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">T</div>
+                <span className="text-xs text-gray-500">Teacher #{selectedStudentFeedback.teacher_id}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

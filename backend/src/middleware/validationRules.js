@@ -59,7 +59,7 @@ const feedbackRules = [
   body("student_id").isInt().withMessage("Valid student_id is required"),
   body("teacher_id").isInt().withMessage("Valid teacher_id is required"),
   body("feedback").notEmpty().withMessage("Feedback is required"),
-  body("media_url").optional().isURL().withMessage("media_url must be a valid URL"),
+  body("media_url").optional({ nullable: true }).isURL().withMessage("media_url must be a valid URL"),
 ];
 
 module.exports = {
