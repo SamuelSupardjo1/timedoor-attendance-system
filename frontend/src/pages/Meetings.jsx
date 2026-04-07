@@ -50,7 +50,6 @@ const Meetings = () => {
 
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code);
-    alert(`Copied: ${code}`);
   };
 
   return (
@@ -61,12 +60,6 @@ const Meetings = () => {
           <h1 className="text-3xl font-bold text-gray-800">Meetings</h1>
           <p className="text-gray-400 mt-1">Manage class meetings and attendance codes</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
-        >
-          <MdAdd size={18} /> New Meeting
-        </button>
       </div>
 
       {/* Search + Stats */}
@@ -84,6 +77,12 @@ const Meetings = () => {
         <div className="bg-purple-50 text-purple-600 px-4 py-2.5 rounded-xl text-sm font-medium">
           Total Meetings: {meta.total || 0}
         </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="ml-auto flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+        >
+          <MdAdd size={18} /> New Meeting
+        </button>
       </div>
 
       {/* Table */}

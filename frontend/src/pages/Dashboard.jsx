@@ -2,7 +2,7 @@ import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
-import { MdMeetingRoom, MdPeople, MdFeedback, MdLogout } from "react-icons/md";
+import { MdMeetingRoom, MdPeople, MdMenuBook, } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 const StatCard = ({ label, value, color }) => (
@@ -72,7 +72,7 @@ const Dashboard = () => {
             { label: "Add Student", path: "/students", icon: <MdPeople size={18}/> , color: "bg-green-50 text-green-600" },
             { label: "Add Teacher", path: "/teachers", icon: <MdPeople size={18}/>, color: "bg-blue-50 text-blue-600" },
             { label: "New Meeting", path: "/meetings", icon: <MdMeetingRoom size={18}/>, color: "bg-purple-50 text-purple-600" },
-            { label: "View Reports", path: "/reports", icon: <MdFeedback size={18}/>, color: "bg-orange-50 text-orange-600" },
+            { label: "Add Course", path: "/courses", icon: <MdMenuBook size={18}/>, color: "bg-orange-50 text-orange-600" },
           ].map((action) => (
             <button
               key={action.label}

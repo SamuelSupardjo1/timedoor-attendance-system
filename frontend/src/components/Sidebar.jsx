@@ -1,12 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { MdDashboard, MdMeetingRoom, MdChecklist, MdPeople, MdFeedback, MdLogout } from "react-icons/md";
-
+import { MdDashboard, MdMeetingRoom, MdPeople, MdSchool, MdMenuBook, MdLogout } from "react-icons/md";
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: <MdDashboard size={18} /> },
   { label: "Students", path: "/students", icon: <MdPeople size={18} /> },
   { label: "Teachers", path: "/teachers", icon: <MdPeople size={18} /> },
   { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
+  { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
 ];
 
 const Sidebar = () => {

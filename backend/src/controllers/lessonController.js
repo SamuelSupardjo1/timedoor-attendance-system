@@ -14,8 +14,8 @@ const createLesson = async (req, res, next) => {
 
 const getLessons = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const lessons = await lessonModel.getLessons(page, limit);
+    const { page = 1, limit = 10, search = "", course_id = null } = req.query;
+    const lessons = await lessonModel.getLessons(page, limit, search, course_id);
     res.json(lessons);
   } catch (err) {
     next(err);

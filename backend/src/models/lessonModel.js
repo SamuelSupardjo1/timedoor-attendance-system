@@ -11,15 +11,27 @@ const createLesson = async (course_id, lesson_number, lesson_name) => {
   return result.rows[0];
 };
 
-const getLessons = async (page = 1, limit = 10) => {
+const getLessons = async (page = 1, limit = 10, search = "", course_id = null) => {
   const offset = (page - 1) * limit;
+
+  const whereClause = course_id
+    ? `WHERE lessons.course_id = ${course_id} AND lessons.lesson_name ILIKE '%${search}%'`
+    : `WHERE lessons.lesson_name ILIKE '%${search}%'`;
+
   const result = await pool.query(`
     SELECT lessons.*, courses.course_name
     FROM lessons
     JOIN courses ON lessons.course_id = courses.id
+    ${whereClause}
+    ORDER BY lessons.lesson_number ASC
     LIMIT $1 OFFSET $2
   `, [limit, offset]);
-  const total = await pool.query(`SELECT COUNT(*) FROM lessons`);
+
+  const total = await pool.query(`
+    SELECT COUNT(*) FROM lessons
+    ${whereClause}
+  `);
+
   return {
     data: result.rows,
     meta: {

@@ -9,13 +9,20 @@ const createCourse = async (course_name, description) => {
   return result.rows[0];
 };
 
-const getCourses = async (page = 1, limit = 10) => {
+const getCourses = async (page = 1, limit = 10, search = "") => {
   const offset = (page - 1) * limit;
-  const result = await pool.query(
-    `SELECT * FROM courses LIMIT $1 OFFSET $2`,
-    [limit, offset]
-  );
-  const total = await pool.query(`SELECT COUNT(*) FROM courses`);
+
+  const result = await pool.query(`
+    SELECT * FROM courses
+    WHERE course_name ILIKE $1
+    LIMIT $2 OFFSET $3
+  `, [`%${search}%`, limit, offset]);
+
+  const total = await pool.query(`
+    SELECT COUNT(*) FROM courses
+    WHERE course_name ILIKE $1
+  `, [`%${search}%`]);
+
   return {
     data: result.rows,
     meta: {
