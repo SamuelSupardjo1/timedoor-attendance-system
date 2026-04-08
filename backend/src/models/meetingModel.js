@@ -1,13 +1,13 @@
 const pool = require("../config/db");
 
-const createMeeting = async (lesson_id, teacher_id, date) => {
+const createMeeting = async (class_id, date) => {
   const attendance_code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   const result = await pool.query(
-    `INSERT INTO meetings (lesson_id, teacher_id, date, attendance_code)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO meetings (class_id, date, attendance_code)
+     VALUES ($1, $2, $3)
      RETURNING *`,
-    [lesson_id, teacher_id, date, attendance_code]
+    [class_id, date, attendance_code]
   );
 
   return result.rows[0];
@@ -19,23 +19,25 @@ const getMeetings = async (page = 1, limit = 10, search = "") => {
   const result = await pool.query(`
     SELECT 
       meetings.*,
-      lessons.lesson_name,
-      lessons.lesson_number,
-      users.name AS teacher_name
+      classes.class_name,
+      COUNT(DISTINCT attendance.student_id) AS student_count,
+      STRING_AGG(DISTINCT users.name, ', ') AS teacher_names
     FROM meetings
-    JOIN lessons ON meetings.lesson_id = lessons.id
-    JOIN teachers ON meetings.teacher_id = teachers.id
-    JOIN users ON teachers.user_id = users.id
-    WHERE lessons.lesson_name ILIKE $1 OR users.name ILIKE $1
+    JOIN classes ON meetings.class_id = classes.id
+    LEFT JOIN class_teachers ON classes.id = class_teachers.class_id
+    LEFT JOIN teachers ON class_teachers.teacher_id = teachers.id
+    LEFT JOIN users ON teachers.user_id = users.id
+    LEFT JOIN attendance ON meetings.id = attendance.meeting_id
+    WHERE classes.class_name ILIKE $1 OR meetings.attendance_code ILIKE $1
+    GROUP BY meetings.id, classes.class_name
+    ORDER BY meetings.date DESC
     LIMIT $2 OFFSET $3
   `, [`%${search}%`, limit, offset]);
 
   const total = await pool.query(`
-    SELECT COUNT(*) FROM meetings
-    JOIN lessons ON meetings.lesson_id = lessons.id
-    JOIN teachers ON meetings.teacher_id = teachers.id
-    JOIN users ON teachers.user_id = users.id
-    WHERE lessons.lesson_name ILIKE $1 OR users.name ILIKE $1
+    SELECT COUNT(DISTINCT meetings.id) FROM meetings
+    JOIN classes ON meetings.class_id = classes.id
+    WHERE classes.class_name ILIKE $1 OR meetings.attendance_code ILIKE $1
   `, [`%${search}%`]);
 
   return {
@@ -53,26 +55,29 @@ const getMeetingById = async (id) => {
   const result = await pool.query(`
     SELECT 
       meetings.*,
-      lessons.lesson_name,
-      lessons.lesson_number,
-      users.name AS teacher_name
+      classes.class_name,
+      COUNT(DISTINCT attendance.student_id) AS student_count,
+      STRING_AGG(DISTINCT users.name, ', ') AS teacher_names
     FROM meetings
-    JOIN lessons ON meetings.lesson_id = lessons.id
-    JOIN teachers ON meetings.teacher_id = teachers.id
-    JOIN users ON teachers.user_id = users.id
+    JOIN classes ON meetings.class_id = classes.id
+    LEFT JOIN class_teachers ON classes.id = class_teachers.class_id
+    LEFT JOIN teachers ON class_teachers.teacher_id = teachers.id
+    LEFT JOIN users ON teachers.user_id = users.id
+    LEFT JOIN attendance ON meetings.id = attendance.meeting_id
     WHERE meetings.id = $1
+    GROUP BY meetings.id, classes.class_name
   `, [id]);
 
   return result.rows[0];
 };
 
-const updateMeeting = async (id, lesson_id, teacher_id, date) => {
+const updateMeeting = async (id, class_id, date) => {
   const result = await pool.query(
     `UPDATE meetings
-     SET lesson_id = $1, teacher_id = $2, date = $3
-     WHERE id = $4
+     SET class_id = $1, date = $2
+     WHERE id = $3
      RETURNING *`,
-    [lesson_id, teacher_id, date, id]
+    [class_id, date, id]
   );
 
   return result.rows[0];

@@ -90,9 +90,10 @@ const Meetings = () => {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Lesson</th>
-              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Teacher</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Class</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Teachers</th>
               <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Date</th>
+              <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Students</th>
               <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Attendance Code</th>
               <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Actions</th>
             </tr>
@@ -100,26 +101,20 @@ const Meetings = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="text-center py-12 text-gray-400">Loading...</td>
+                <td colSpan={6} className="text-center py-12 text-gray-400">Loading...</td>
               </tr>
             ) : meetings.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-12 text-gray-400">No meetings found</td>
+                <td colSpan={6} className="text-center py-12 text-gray-400">No meetings found</td>
               </tr>
             ) : (
               meetings.map((meeting) => (
                 <tr key={meeting.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
                   <td className="px-6 py-4 text-center">
-                    <p className="text-sm font-medium text-gray-800">{meeting.lesson_name}</p>
-                    <p className="text-xs text-gray-400">Lesson #{meeting.lesson_number}</p>
+                    <p className="text-sm font-medium text-gray-800">{meeting.class_name}</p>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">
-                        {meeting.teacher_name?.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-sm text-gray-600">{meeting.teacher_name}</span>
-                    </div>
+                    <p className="text-sm text-gray-600">{meeting.teacher_names || "No teachers assigned"}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 text-center">
                     {new Date(meeting.date).toLocaleDateString("en-US", {
@@ -127,6 +122,11 @@ const Meetings = () => {
                       month: "short",
                       day: "numeric",
                     })}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-sm font-medium">
+                      {meeting.student_count || 0}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex justify-center gap-2">

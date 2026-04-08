@@ -1,17 +1,39 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { MdDashboard, MdMeetingRoom, MdPeople, MdSchool, MdMenuBook, MdLogout } from "react-icons/md";
-const navItems = [
-  { label: "Dashboard", path: "/dashboard", icon: <MdDashboard size={18} /> },
-  { label: "Students", path: "/students", icon: <MdPeople size={18} /> },
-  { label: "Teachers", path: "/teachers", icon: <MdPeople size={18} /> },
-  { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
-  { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
-];
+import { MdDashboard, MdMeetingRoom, MdPeople, MdMenuBook, MdLogout } from "react-icons/md";
+import { PiStudentFill } from "react-icons/pi";
+
+// Role-based navigation items
+const getNavItems = (role) => {
+  const baseItems = [
+    { label: "Dashboard", path: "/dashboard", icon: <MdDashboard size={18} /> },
+  ];
+
+  const roleItems = {
+    admin: [
+      { label: "Students", path: "/students", icon: <PiStudentFill size={18} /> },
+      { label: "Teachers", path: "/teachers", icon: <MdPeople size={18} /> },
+      { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
+      { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
+    ],
+    teacher: [
+      { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
+      { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
+    ],
+    student: [
+      { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
+      { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
+    ],
+    parent: [],
+  };
+
+  return [...baseItems, ...(roleItems[role] || [])];
+};
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const navItems = getNavItems(user?.role || "student");
 
   const handleLogout = () => {
     logout();

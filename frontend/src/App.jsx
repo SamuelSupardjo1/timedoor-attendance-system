@@ -8,12 +8,13 @@ import Meetings from "./pages/Meetings";
 import MeetingDetail from "./pages/MeetingDetail";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
+import Unauthorized from "./pages/Unauthorized";
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/unauthorized" element={<div>Access Denied</div>} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
       <Route
         path="/dashboard"
         element={
@@ -25,7 +26,7 @@ function App() {
       <Route
         path="/students"
         element={
-          <ProtectedRoute roles={["admin", "teacher", "parent"]}>
+          <ProtectedRoute roles={["admin"]}>
             <Students />
           </ProtectedRoute>
         }
@@ -33,7 +34,7 @@ function App() {
       <Route
         path="/teachers"
         element={
-          <ProtectedRoute roles={["admin", "teacher"]}>
+          <ProtectedRoute roles={["admin"]}>
             <Teachers />
           </ProtectedRoute>
         }
@@ -58,7 +59,7 @@ function App() {
       <Route
         path="/courses"
         element={
-          <ProtectedRoute roles={["admin", "teacher"]}>
+          <ProtectedRoute roles={["admin", "teacher", "student"]}>
             <Courses />
           </ProtectedRoute>
         }
@@ -66,7 +67,7 @@ function App() {
       <Route
         path="/courses/:id"
         element={
-          <ProtectedRoute roles={["admin", "teacher"]}>
+          <ProtectedRoute roles={["admin", "teacher", "student"]}>
             <CourseDetail />
           </ProtectedRoute>
         }

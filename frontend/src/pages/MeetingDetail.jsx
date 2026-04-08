@@ -216,9 +216,12 @@ const MeetingDetail = () => {
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-sm">
-                          {record.student}
+                          {record.student_name?.charAt(0).toUpperCase()}
                         </div>
-                        <p className="text-sm font-medium text-gray-800">Student #{record.student}</p>
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-gray-800">{record.student_name}</p>
+                          <p className="text-xs text-gray-400">{record.student_email}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">

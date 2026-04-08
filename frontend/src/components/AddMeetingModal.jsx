@@ -3,23 +3,17 @@ import { MdClose } from "react-icons/md";
 import api from "../api/axios";
 
 const AddMeetingModal = ({ onClose, onSuccess }) => {
-  const [lessonId, setLessonId] = useState("");
-  const [teacherId, setTeacherId] = useState("");
+  const [classId, setClassId] = useState("");
   const [date, setDate] = useState("");
-  const [lessons, setLessons] = useState([]);
-  const [teachers, setTeachers] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [lessonsRes, teachersRes] = await Promise.all([
-          api.get("/lessons?limit=100"),
-          api.get("/teachers?limit=100"),
-        ]);
-        setLessons(lessonsRes.data.data);
-        setTeachers(teachersRes.data.data);
+        const classesRes = await api.get("/classes?limit=100");
+        setClasses(classesRes.data.data);
       } catch (err) {
         console.error(err);
       }
@@ -34,8 +28,7 @@ const AddMeetingModal = ({ onClose, onSuccess }) => {
 
     try {
       await api.post("/meetings", {
-        lesson_id: parseInt(lessonId),
-        teacher_id: parseInt(teacherId),
+        class_id: parseInt(classId),
         date,
       });
       onSuccess();
@@ -61,34 +54,17 @@ const AddMeetingModal = ({ onClose, onSuccess }) => {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Lesson</label>
+            <label className="text-sm font-medium text-gray-700">Class</label>
             <select
-              value={lessonId}
-              onChange={(e) => setLessonId(e.target.value)}
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
               required
               className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
             >
-              <option value="">Select a lesson</option>
-              {lessons.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.lesson_name} (#{l.lesson_number})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Teacher</label>
-            <select
-              value={teacherId}
-              onChange={(e) => setTeacherId(e.target.value)}
-              required
-              className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option value="">Select a teacher</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              <option value="">Select a class</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.class_name}
                 </option>
               ))}
             </select>

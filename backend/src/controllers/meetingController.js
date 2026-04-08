@@ -2,8 +2,8 @@ const meetingModel = require("../models/meetingModel");
 
 const createMeeting = async (req, res) => {
   try {
-    const { lesson_id, teacher_id, date } = req.body;
-    const meeting = await meetingModel.createMeeting(lesson_id, teacher_id, date);
+    const { class_id, date } = req.body;
+    const meeting = await meetingModel.createMeeting(class_id, date);
     res.status(201).json(meeting);
   } catch (err) {
     console.error(err);
@@ -34,8 +34,8 @@ const getMeetingById = async (req, res) => {
 
 const updateMeeting = async (req, res) => {
   try {
-    const { lesson_id, teacher_id, date } = req.body;
-    const meeting = await meetingModel.updateMeeting(req.params.id, lesson_id, teacher_id, date);
+    const { class_id, date } = req.body;
+    const meeting = await meetingModel.updateMeeting(req.params.id, class_id, date);
     if (!meeting) return res.status(404).json({ message: "Meeting not found" });
     res.json(meeting);
   } catch (err) {
