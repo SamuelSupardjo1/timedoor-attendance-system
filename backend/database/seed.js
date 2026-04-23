@@ -129,7 +129,7 @@ async function seedDatabase() {
     // ===== SEED LESSONS =====
     console.log("📖 Creating lessons...");
     const lessonIds = [];
-    const lessonsPerCourse = 5;
+    const lessonsPerCourse = 16;
 
     for (const courseId of courseIds) {
       for (let i = 1; i <= lessonsPerCourse; i++) {

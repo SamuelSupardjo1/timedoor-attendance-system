@@ -9,23 +9,40 @@ const createStudent = async (user_id, parent_id) => {
   return result.rows[0];
 };
 
-const getStudents = async (page = 1, limit = 10, search = "") => {
+const getStudents = async (page = 1, limit = 10, search = "", parentId = null) => {
   const offset = (page - 1) * limit;
-
-  const result = await pool.query(`
+  
+  let query = `
     SELECT students.id, students.user_id, students.parent_id, users.name, users.email, parents.name AS parent_name
     FROM students
     JOIN users ON students.user_id = users.id
     LEFT JOIN users AS parents ON students.parent_id = parents.id
-    WHERE users.name ILIKE $1 OR users.email ILIKE $1
-    LIMIT $2 OFFSET $3
-  `, [`%${search}%`, limit, offset]);
-
-  const total = await pool.query(`
+    WHERE (users.name ILIKE $1 OR users.email ILIKE $1)
+  `;
+  
+  let countQuery = `
     SELECT COUNT(*) FROM students
     JOIN users ON students.user_id = users.id
-    WHERE users.name ILIKE $1 OR users.email ILIKE $1
-  `, [`%${search}%`]);
+    WHERE (users.name ILIKE $1 OR users.email ILIKE $1)
+  `;
+  
+  let params = [`%${search}%`];
+  
+  if (parentId) {
+    query += " AND students.parent_id = $2";
+    countQuery += " AND students.parent_id = $2";
+    params.push(parentId);
+  }
+  
+  query += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+  params.push(limit, offset);
+
+  const result = await pool.query(query, params);
+
+  const countParams = [`%${search}%`];
+  if (parentId) countParams.push(parentId);
+  
+  const total = await pool.query(countQuery, countParams);
 
   return {
     data: result.rows,

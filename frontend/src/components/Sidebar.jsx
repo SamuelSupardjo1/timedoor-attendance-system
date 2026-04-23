@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MdDashboard, MdMeetingRoom, MdPeople, MdMenuBook, MdLogout } from "react-icons/md";
 import { PiStudentFill } from "react-icons/pi";
+import timedoorLogo from "../assets/timedoor_logo.png";
 
 // Role-based navigation items
 const getNavItems = (role) => {
@@ -41,34 +42,28 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col justify-between py-6 px-4">
-      {/* Logo */}
+    <div className="w-64 min-h-screen bg-gradient-to-b from-white to-gray-50 border-r border-gray-100 flex flex-col justify-between py-6 px-4">
+      {/* Logo Section */}
       <div>
-        <div className="flex items-center gap-3 px-2 mb-8">
-          <div className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">TD</span>
-          </div>
-          <div>
-            <p className="font-bold text-gray-800 text-sm">Timedoor</p>
-            <p className="text-gray-400 text-xs">Attendance Portal</p>
-          </div>
+        <div className="flex items-left justify-left  mb-5">
+          <img src={timedoorLogo} alt="Timedoor" className="h-8" />
         </div>
 
         {/* Nav Items */}
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-2">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? "bg-green-50 text-green-600"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
+                    ? "bg-green-500 text-white shadow-md shadow-green-200"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                 }`
               }
             >
-              <span>{item.icon}</span>
+              <span className="text-base">{item.icon}</span>
               {item.label}
             </NavLink>
           ))}
@@ -76,14 +71,14 @@ const Sidebar = () => {
       </div>
 
       {/* Bottom */}
-      <div className="flex flex-col gap-2">
-        <div className="px-3 py-2 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-gray-800">{user?.name}</p>
-          <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+      <div className="flex flex-col gap-3">
+        <div className="px-4 py-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 shadow-sm">
+          <p className="text-sm font-bold text-gray-800 mb-1">{user?.name}</p>
+          <p className="text-xs text-green-600 font-semibold uppercase tracking-wide">{user?.role}</p>
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 border border-red-200 hover:border-red-300"
         >
           <MdLogout size={18} /> Logout
         </button>
