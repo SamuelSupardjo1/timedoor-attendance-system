@@ -82,6 +82,10 @@ CREATE TABLE attendance (
   meeting_id INT REFERENCES meetings(id) ON DELETE CASCADE,
   lesson_id INT REFERENCES lessons(id) ON DELETE CASCADE,
   status VARCHAR(10) CHECK (status IN ('present', 'absent')),
+  code_submitted VARCHAR(6),
+  approval_status VARCHAR(20) CHECK (approval_status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
+  submitted_at TIMESTAMP,
+  approved_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

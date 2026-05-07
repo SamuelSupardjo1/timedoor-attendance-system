@@ -67,6 +67,19 @@ const getStudentById = async (id) => {
   return result.rows[0];
 };
 
+// Get student record by user_id (for authenticated students to get their own profile)
+const getStudentByUserId = async (user_id) => {
+  const result = await pool.query(
+    `SELECT students.*, users.name, users.email, parents.name AS parent_name
+     FROM students
+     JOIN users ON students.user_id = users.id
+     LEFT JOIN users AS parents ON students.parent_id = parents.id
+     WHERE students.user_id = $1`,
+    [user_id]
+  );
+  return result.rows[0];
+};
+
 const updateStudent = async (id, user_id, parent_id) => {
   const result = await pool.query(
     `UPDATE students SET user_id = $1, parent_id = $2 WHERE id = $3 RETURNING *`,
@@ -106,6 +119,7 @@ module.exports = {
   createStudent,
   getStudents,
   getStudentById,
+  getStudentByUserId,
   updateStudent,
   deleteStudent
 };

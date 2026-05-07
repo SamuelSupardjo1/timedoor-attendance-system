@@ -54,10 +54,22 @@ const deleteStudent = async (req, res, next) => {
   }
 };
 
+// Get current logged-in student's profile
+const getMyStudentProfile = async (req, res, next) => {
+  try {
+    const student = await studentModel.getStudentByUserId(req.user.id);
+    if (!student) return res.status(404).json({ message: "Student profile not found" });
+    res.json({ data: student });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createStudent,
   getStudents,
   getStudentById,
+  getMyStudentProfile,
   updateStudent,
   deleteStudent
 };

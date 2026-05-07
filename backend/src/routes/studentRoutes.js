@@ -5,6 +5,7 @@ const { authenticate, authorizeRoles } = require("../middleware/authMiddleware")
 const { studentRules } = require("../middleware/validationRules");
 const validate = require("../middleware/validate");
 
+router.get("/me", authenticate, authorizeRoles("student"), studentController.getMyStudentProfile);
 router.get("/", authenticate, authorizeRoles("admin", "teacher", "parent"), studentController.getStudents);
 router.get("/:id", authenticate, authorizeRoles("admin", "teacher", "parent"), studentController.getStudentById);
 router.post("/", authenticate, authorizeRoles("admin"), studentRules, validate, studentController.createStudent);

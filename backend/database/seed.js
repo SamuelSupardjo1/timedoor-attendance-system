@@ -252,6 +252,11 @@ async function seedDatabase() {
     console.log("✅ Creating attendance records...");
     let attendanceCount = 0;
 
+    // Helper function to generate 6-digit code
+    const generate6DigitCode = () => {
+      return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+    };
+
     for (const meetingId of meetingIds) {
       // Get class for this meeting
       const classResult = await client.query(
@@ -285,11 +290,30 @@ async function seedDatabase() {
         if (studentLessons.length > 0) {
           const lesson = studentLessons[Math.floor(Math.random() * studentLessons.length)];
           const status = Math.random() > 0.15 ? "present" : "absent"; // 85% present
+          
+          // Generate 6-digit code and approval status
+          const codeSubmitted = Math.random() > 0.3 ? generate6DigitCode() : null;
+          let approvalStatus = 'pending';
+          let submittedAt = null;
+          let approvedAt = null;
+          
+          if (codeSubmitted) {
+            submittedAt = new Date(new Date().getTime() - Math.random() * 86400000); // Random time in last 24 hours
+            const approvalRandom = Math.random();
+            if (approvalRandom > 0.6) {
+              approvalStatus = 'approved';
+              approvedAt = new Date(submittedAt.getTime() + 3600000); // 1 hour after submission
+            } else if (approvalRandom > 0.3) {
+              approvalStatus = 'rejected';
+              approvedAt = new Date(submittedAt.getTime() + 1800000); // 30 mins after submission
+            }
+            // else approvalStatus stays 'pending'
+          }
 
           await client.query(`
-            INSERT INTO attendance (student_id, meeting_id, lesson_id, status)
-            VALUES ($1, $2, $3, $4)
-          `, [studentId, meetingId, lesson.lesson_id, status]);
+            INSERT INTO attendance (student_id, meeting_id, lesson_id, status, code_submitted, approval_status, submitted_at, approved_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          `, [studentId, meetingId, lesson.lesson_id, status, codeSubmitted, approvalStatus, submittedAt, approvedAt]);
           attendanceCount++;
         }
       }

@@ -42,7 +42,7 @@ function App() {
       <Route
         path="/meetings"
         element={
-          <ProtectedRoute roles={["admin", "teacher", "student", "parent"]}>
+          <ProtectedRoute roles={["admin", "teacher"]}>
             <Meetings />
           </ProtectedRoute>
         }
@@ -51,7 +51,7 @@ function App() {
       <Route
         path="/meetings/:id"
         element={
-          <ProtectedRoute roles={["admin", "teacher", "student", "parent"]}>
+          <ProtectedRoute roles={["admin", "teacher"]}>
             <MeetingDetail />
           </ProtectedRoute>
         }
@@ -59,7 +59,7 @@ function App() {
       <Route
         path="/courses"
         element={
-          <ProtectedRoute roles={["admin", "teacher", "student"]}>
+          <ProtectedRoute roles={["admin", "teacher"]}>
             <Courses />
           </ProtectedRoute>
         }
@@ -67,7 +67,7 @@ function App() {
       <Route
         path="/courses/:id"
         element={
-          <ProtectedRoute roles={["admin", "teacher", "student"]}>
+          <ProtectedRoute roles={["admin", "teacher"]}>
             <CourseDetail />
           </ProtectedRoute>
         }

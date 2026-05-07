@@ -4,7 +4,7 @@ const classController = require("../controllers/classController");
 const { authorizeRoles } = require("../middleware/authMiddleware");
 
 // List and create classes
-router.get("/", authorizeRoles("admin", "teacher", "student"), classController.getClasses);
+router.get("/", authorizeRoles("admin", "teacher"), classController.getClasses);
 router.post("/", authorizeRoles("admin"), classController.createClass);
 
 // Teacher management
@@ -21,8 +21,8 @@ router.post("/lessons/remove", authorizeRoles("admin"), classController.removeLe
 
 // Get specific resources (must be after POST routes)
 router.get("/lessons/:id", authorizeRoles("admin", "student", "parent"), classController.getStudentLessons);
-router.get("/:id/students", authorizeRoles("admin", "teacher", "student"), classController.getClassStudents);
-router.get("/:id", authorizeRoles("admin", "teacher", "student"), classController.getClassById);
+router.get("/:id/students", authorizeRoles("admin", "teacher"), classController.getClassStudents);
+router.get("/:id", authorizeRoles("admin", "teacher"), classController.getClassById);
 
 // Update and delete classes
 router.put("/:id", authorizeRoles("admin"), classController.updateClass);

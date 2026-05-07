@@ -21,10 +21,7 @@ const getNavItems = (role) => {
       { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
       { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
     ],
-    student: [
-      { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
-      { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
-    ],
+    student: [],
     parent: [],
   };
 
