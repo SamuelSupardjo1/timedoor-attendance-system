@@ -68,10 +68,11 @@ const AdminDashboard = () => {
       {/* Quick Actions */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {[
-            { label: "Add Student", path: "/students", icon: <PiStudentFill size={18}/> , color: "bg-green-50 text-green-600" },
+            { label: "Add Student", path: "/students", icon: <PiStudentFill size={18}/>, color: "bg-green-50 text-green-600" },
             { label: "Add Teacher", path: "/teachers", icon: <MdPeople size={18}/>, color: "bg-blue-50 text-blue-600" },
+            { label: "New Class", path: "/classes", icon: <MdMenuBook size={18}/>, color: "bg-yellow-50 text-yellow-600" },
             { label: "New Meeting", path: "/meetings", icon: <MdMeetingRoom size={18}/>, color: "bg-purple-50 text-purple-600" },
             { label: "Add Course", path: "/courses", icon: <MdMenuBook size={18}/>, color: "bg-orange-50 text-orange-600" },
           ].map((action) => (

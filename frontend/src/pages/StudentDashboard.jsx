@@ -145,7 +145,7 @@ const StudentDashboard = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">
-          Welcome back, <span className="text-blue-500">{user?.name}</span> 👋
+          Welcome back, <span className="text-green-500">{user?.name}</span> 👋
         </h1>
         <p className="text-gray-400 mt-1">Mark your attendance for your classes</p>
       </div>
@@ -164,9 +164,9 @@ const StudentDashboard = () => {
       ) : meetings && meetings.length > 0 ? (
         <>
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-8 shadow-lg text-white mb-8">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl p-8 shadow-lg text-white mb-8">
             <h2 className="text-3xl font-bold mb-2">Mark Your Presence</h2>
-            <p className="text-blue-100">Enter the 6-digit code provided by your teacher to mark attendance</p>
+            <p className="text-green-100">Enter the 6-digit code provided by your teacher to mark attendance</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
@@ -203,7 +203,7 @@ const StudentDashboard = () => {
 
                 {/* Code Input Section */}
                 {!submittedCodes[meeting.meeting_id] ? (
-                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                  <div className="bg-green-50 rounded-xl p-6 border border-green-200">
                     <div className="mb-4">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Enter 6-Digit Attendance Code
@@ -215,11 +215,11 @@ const StudentDashboard = () => {
                           onChange={(e) => handleCodeChange(meeting.meeting_id, e.target.value)}
                           placeholder="000000"
                           maxLength="6"
-                          className="flex-1 px-4 py-3 text-2xl text-center tracking-widest border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-600 font-mono"
+                          className="flex-1 px-4 py-3 text-2xl text-center tracking-widest border-2 border-green-300 rounded-lg focus:outline-none focus:border-green-600 font-mono"
                         />
                         <button
                           onClick={() => handleSubmitCode(meeting.meeting_id)}
-                          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors"
+                          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
                         >
                           Submit
                         </button>

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 import { MdAdd, MdSearch, MdEdit, MdDelete, MdVisibility } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import AddCourseModal from "../components/AddCourseModal";
-import EditCourseModal from "../components/EditCourseModal";    
+import EditCourseModal from "../components/EditCourseModal";
 
 const Courses = () => {
-  const [courses, setCourses] = useState([]);
-  const [meta, setMeta] = useState({});
-  const [page, setPage] = useState(1);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -74,12 +74,14 @@ const Courses = () => {
         <div className="bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl text-sm font-medium">
           Total Courses: {meta.total || 0}
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="ml-auto flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
-        >
-          <MdAdd size={18} /> Add Course
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="ml-auto flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+          >
+            <MdAdd size={18} /> Add Course
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -126,18 +128,22 @@ const Courses = () => {
                       >
                         <MdVisibility size={16} />
                       </button>
-                      <button
-                        onClick={() => setEditCourse(course)}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
-                      >
-                        <MdEdit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(course.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
-                      >
-                        <MdDelete size={16} />
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => setEditCourse(course)}
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                          >
+                            <MdEdit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(course.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                          >
+                            <MdDelete size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -170,13 +176,13 @@ const Courses = () => {
         </div>
       </div>
 
-      {showAddModal && (
+      {isAdmin && showAddModal && (
         <AddCourseModal
           onClose={() => setShowAddModal(false)}
           onSuccess={fetchCourses}
         />
       )}
-      {editCourse && (
+      {isAdmin && editCourse && (
         <EditCourseModal
           course={editCourse}
           onClose={() => setEditCourse(null)}
