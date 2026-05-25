@@ -22,7 +22,11 @@ const createFeedback = async (req, res) => {
 const getFeedbacks = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "", meeting_id = null } = req.query;
-    const feedbacks = await meetingFeedbackModel.getFeedbacks(page, limit, search, meeting_id);
+    
+    // If user is a student, only show their own feedback
+    const student_id = req.user.role === 'student' ? req.user.id : null;
+    
+    const feedbacks = await meetingFeedbackModel.getFeedbacks(page, limit, search, meeting_id, student_id);
     res.json(feedbacks);
   } catch (err) {
     next(err);
@@ -31,7 +35,10 @@ const getFeedbacks = async (req, res, next) => {
 
 const getFeedbackById = async (req, res, next) => {
   try {
-    const feedback = await meetingFeedbackModel.getFeedbackById(req.params.id);
+    // If user is a student, they can only see their own feedback
+    const student_id = req.user.role === 'student' ? req.user.id : null;
+    
+    const feedback = await meetingFeedbackModel.getFeedbackById(req.params.id, student_id);
     if (!feedback) return res.status(404).json({ message: "Feedback not found" });
     res.json(feedback);
   } catch (err) {

@@ -11,12 +11,38 @@ const createFeedback = async (meeting_id , student_id, teacher_id, feedback, med
   return result.rows[0];
 };
 
-const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null) => {
+const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null, student_id = null) => {
   const offset = (page - 1) * limit;
 
-  const whereClause = meeting_id
-    ? `WHERE meeting_feedback.meeting_id = ${meeting_id} AND meeting_feedback.feedback ILIKE '%${search}%'`
-    : `WHERE meeting_feedback.feedback ILIKE '%${search}%'`;
+  // Build WHERE clause - students can only see their own feedback
+  let whereConditions = [];
+  let params = [];
+  let paramIndex = 1;
+
+  if (student_id) {
+    whereConditions.push(`meeting_feedback.student_id = $${paramIndex}`);
+    params.push(student_id);
+    paramIndex++;
+  }
+
+  if (meeting_id) {
+    whereConditions.push(`meeting_feedback.meeting_id = $${paramIndex}`);
+    params.push(meeting_id);
+    paramIndex++;
+  }
+
+  if (search) {
+    whereConditions.push(`meeting_feedback.feedback ILIKE $${paramIndex}`);
+    params.push(`%${search}%`);
+    paramIndex++;
+  }
+
+  const whereClause = whereConditions.length > 0 
+    ? `WHERE ${whereConditions.join(' AND ')}`
+    : '';
+
+  params.push(limit);
+  params.push(offset);
 
   const result = await pool.query(`
     SELECT meeting_feedback.*
@@ -25,35 +51,45 @@ const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null
     JOIN students ON meeting_feedback.student_id = students.id
     JOIN teachers ON meeting_feedback.teacher_id = teachers.id
     ${whereClause}
-    LIMIT $1 OFFSET $2
-  `, [limit, offset]);
+    ORDER BY meeting_feedback.created_at DESC
+    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+  `, params);
 
-  const total = await pool.query(`
+  const totalParams = params.slice(0, params.length - 2);
+  const countResult = await pool.query(`
     SELECT COUNT(*) FROM meeting_feedback
     ${whereClause}
-  `);
+  `, totalParams);
 
   return {
     data: result.rows,
     meta: {
-      total: parseInt(total.rows[0].count),
+      total: parseInt(countResult.rows[0].count),
       page: parseInt(page),
       limit: parseInt(limit),
-      totalPages: Math.ceil(total.rows[0].count / limit)
+      totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
     }
   };
 };
 
-const getFeedbackById = async (id) => {
-  const result = await pool.query(
-    `SELECT meeting_feedback.*, meetings.date, students.user_id AS student_user_id, teachers.user_id AS teacher_user_id
-     FROM meeting_feedback
-     JOIN meetings ON meeting_feedback.meeting_id = meetings.id
-     JOIN students ON meeting_feedback.student_id = students.id
-     JOIN teachers ON meeting_feedback.teacher_id = teachers.id
-     WHERE meeting_feedback.id = $1`,
-    [id]
-  );
+const getFeedbackById = async (id, student_id = null) => {
+  let query = `
+    SELECT meeting_feedback.*, meetings.date, students.user_id AS student_user_id, teachers.user_id AS teacher_user_id
+    FROM meeting_feedback
+    JOIN meetings ON meeting_feedback.meeting_id = meetings.id
+    JOIN students ON meeting_feedback.student_id = students.id
+    JOIN teachers ON meeting_feedback.teacher_id = teachers.id
+    WHERE meeting_feedback.id = $1
+  `;
+  let params = [id];
+
+  // If student_id provided, ensure they can only see their own feedback
+  if (student_id) {
+    query += ` AND meeting_feedback.student_id = $2`;
+    params.push(student_id);
+  }
+
+  const result = await pool.query(query, params);
   return result.rows[0];
 };
 

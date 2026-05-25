@@ -15,7 +15,11 @@ const createLesson = async (req, res, next) => {
 const getLessons = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "", course_id = null } = req.query;
-    const lessons = await lessonModel.getLessons(page, limit, search, course_id);
+    
+    // If user is a student, only show lessons from their enrolled courses
+    const student_id = req.user.role === 'student' ? req.user.id : null;
+    
+    const lessons = await lessonModel.getLessons(page, limit, search, course_id, student_id);
     res.json(lessons);
   } catch (err) {
     next(err);
@@ -24,7 +28,10 @@ const getLessons = async (req, res, next) => {
 
 const getLessonById = async (req, res, next) => {
   try {
-    const lesson = await lessonModel.getLessonById(req.params.id);
+    // If user is a student, they can only see lessons from their enrolled courses
+    const student_id = req.user.role === 'student' ? req.user.id : null;
+    
+    const lesson = await lessonModel.getLessonById(req.params.id, student_id);
     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
     res.json(lesson);
   } catch (err) {
