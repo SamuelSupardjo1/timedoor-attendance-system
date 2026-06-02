@@ -1,23 +1,27 @@
 const studentModel = require("../models/studentModel");
+const responseHandler = require("../utils/responseHandler");
 
-const createStudent = async (req, res) => {
+const createStudent = async (req, res, next) => {
   try {
     const { user_id, parent_id } = req.body;
 
     const student = await studentModel.createStudent(user_id, parent_id);
 
-    res.json(student);
+    responseHandler.success(res, 201, student, "Student created successfully", "CREATED");
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 
 const getStudents = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, search = "", parent_id } = req.query;
+    const { page = 1, limit = 10, search = "" } = req.query;
+    
+    // If user is a parent, automatically filter for their children
+    const parent_id = req.user.role === 'parent' ? req.user.id : req.query.parent_id || null;
+    
     const students = await studentModel.getStudents(page, limit, search, parent_id);
-    res.json(students);
+    responseHandler.success(res, 200, students);
   } catch (err) {
     next(err);
   }
@@ -26,8 +30,8 @@ const getStudents = async (req, res, next) => {
 const getStudentById = async (req, res, next) => {
   try {
     const student = await studentModel.getStudentById(req.params.id);
-    if (!student) return res.status(404).json({ message: "Student not found" });
-    res.json(student);
+    if (!student) return responseHandler.notFound(res, "Student not found");
+    responseHandler.success(res, 200, student);
   } catch (err) {
     next(err);
   }
@@ -37,8 +41,8 @@ const updateStudent = async (req, res, next) => {
   try {
     const { user_id, parent_id } = req.body;
     const student = await studentModel.updateStudent(req.params.id, user_id, parent_id);
-    if (!student) return res.status(404).json({ message: "Student not found" });
-    res.json(student);
+    if (!student) return responseHandler.notFound(res, "Student not found");
+    responseHandler.success(res, 200, student, "Student updated successfully", "UPDATED");
   } catch (err) {
     next(err);
   }
@@ -47,8 +51,8 @@ const updateStudent = async (req, res, next) => {
 const deleteStudent = async (req, res, next) => {
   try {
     const student = await studentModel.deleteStudent(req.params.id);
-    if (!student) return res.status(404).json({ message: "Student not found" });
-    res.json({ message: "Student deleted", student });
+    if (!student) return responseHandler.notFound(res, "Student not found");
+    responseHandler.success(res, 200, student, "Student deleted successfully", "DELETED");
   } catch (err) {
     next(err);
   }
@@ -58,8 +62,8 @@ const deleteStudent = async (req, res, next) => {
 const getMyStudentProfile = async (req, res, next) => {
   try {
     const student = await studentModel.getStudentByUserId(req.user.id);
-    if (!student) return res.status(404).json({ message: "Student profile not found" });
-    res.json({ data: student });
+    if (!student) return responseHandler.notFound(res, "Student profile not found");
+    responseHandler.success(res, 200, student);
   } catch (err) {
     next(err);
   }

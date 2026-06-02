@@ -18,8 +18,8 @@ const Students = () => {
     try {
       setLoading(true);
       const res = await api.get(`/students?page=${page}&limit=10&search=${search}`);
-      setStudents(res.data.data);
-      setMeta(res.data.meta);
+      setStudents(res.data.data.data);
+      setMeta(res.data.data.meta);
     } catch (err) {
       console.error(err);
     } finally {

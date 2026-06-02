@@ -11,7 +11,7 @@ const createLesson = async (course_id, lesson_number, lesson_name) => {
   return result.rows[0];
 };
 
-const getLessons = async (page = 1, limit = 10, search = "", course_id = null, student_id = null) => {
+const getLessons = async (page = 1, limit = 10, search = "", course_id = null, student_id = null, parent_id = null) => {
   const offset = (page - 1) * limit;
   let params = [];
   let paramIndex = 1;
@@ -39,6 +39,17 @@ const getLessons = async (page = 1, limit = 10, search = "", course_id = null, s
     `;
     whereConditions.push(`class_students.student_id = $${paramIndex}`);
     params.push(student_id);
+    paramIndex++;
+  }
+  // If parent_id provided, only show lessons from courses their children are enrolled in
+  else if (parent_id) {
+    joinClause = `
+      JOIN classes ON courses.id = classes.course_id
+      JOIN class_students ON classes.id = class_students.class_id
+      JOIN students ON class_students.student_id = students.id
+    `;
+    whereConditions.push(`students.parent_id = $${paramIndex}`);
+    params.push(parent_id);
     paramIndex++;
   }
 
@@ -77,7 +88,7 @@ const getLessons = async (page = 1, limit = 10, search = "", course_id = null, s
   };
 };
 
-const getLessonById = async (id, student_id = null) => {
+const getLessonById = async (id, student_id = null, parent_id = null) => {
   let query = `
     SELECT lessons.*, courses.course_name
     FROM lessons
@@ -97,6 +108,19 @@ const getLessonById = async (id, student_id = null) => {
       )
     `;
     params.push(student_id);
+  }
+  // If parent_id provided, ensure they can only see lessons from their children's courses
+  else if (parent_id) {
+    query += `
+      AND EXISTS (
+        SELECT 1 FROM classes
+        JOIN class_students ON classes.id = class_students.class_id
+        JOIN students ON class_students.student_id = students.id
+        WHERE classes.course_id = courses.id
+        AND students.parent_id = $2
+      )
+    `;
+    params.push(parent_id);
   }
 
   const result = await pool.query(query, params);

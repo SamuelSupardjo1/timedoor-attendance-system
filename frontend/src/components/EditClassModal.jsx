@@ -9,6 +9,7 @@ const EditClassModal = ({ classData, onClose, onSuccess }) => {
   const [allStudents, setAllStudents] = useState([]);
   const [allTeachers, setAllTeachers] = useState([]);
   const [classStudents, setClassStudents] = useState([]);
+  const [classTeachers, setClassTeachers] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,8 +28,12 @@ const EditClassModal = ({ classData, onClose, onSuccess }) => {
 
   const fetchClassMembers = async () => {
     try {
-      const studentsRes = await api.get(`/classes/${classData.id}/students`);
-      setClassStudents(studentsRes.data || []);
+      const [studentsRes, teachersRes] = await Promise.all([
+        api.get(`/classes/${classData.id}/students`),
+        api.get(`/classes/${classData.id}/teachers`),
+      ]);
+      setClassStudents(studentsRes.data.data || []);
+      setClassTeachers(teachersRes.data.data || []);
     } catch (err) {
       console.error("Error fetching class members:", err);
     }
@@ -40,8 +45,8 @@ const EditClassModal = ({ classData, onClose, onSuccess }) => {
         api.get("/students?limit=1000"),
         api.get("/teachers?limit=1000"),
       ]);
-      setAllStudents(studentsRes.data.data || []);
-      setAllTeachers(teachersRes.data.data || []);
+      setAllStudents(studentsRes.data.data.data || []);
+      setAllTeachers(teachersRes.data.data.data || []);
     } catch (err) {
       console.error("Error fetching available members:", err);
     }
@@ -111,10 +116,27 @@ const EditClassModal = ({ classData, onClose, onSuccess }) => {
         teacher_id: parseInt(selectedTeacher),
       });
       setSelectedTeacher("");
-      alert("Teacher added successfully!");
-      fetchAvailableMembers();
+      fetchClassMembers();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to add teacher");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveTeacher = async (teacherId) => {
+    if (!confirm("Remove this teacher from the class?")) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      await api.post("/classes/teachers/remove", {
+        class_id: classData.id,
+        teacher_id: teacherId,
+      });
+      fetchClassMembers();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to remove teacher");
     } finally {
       setLoading(false);
     }
@@ -162,7 +184,7 @@ const EditClassModal = ({ classData, onClose, onSuccess }) => {
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
-            Teachers ({classDetails?.teacher_count || 0})
+            Teachers ({classTeachers.length})
           </button>
         </div>
 
@@ -286,18 +308,28 @@ const EditClassModal = ({ classData, onClose, onSuccess }) => {
                 </button>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
-                {!classDetails?.teacher_names ? (
-                  <p className="text-center py-6 text-gray-400 text-sm">No teachers assigned yet</p>
+              <div className="bg-gray-50 rounded-xl overflow-hidden">
+                {classTeachers.length === 0 ? (
+                  <p className="text-center py-8 text-gray-400 text-sm">No teachers assigned yet</p>
                 ) : (
-                  <div>
-                    <p className="text-sm text-gray-700 font-medium mb-2">Assigned Teachers:</p>
-                    <p className="text-sm text-gray-600 bg-white p-3 rounded-lg border border-gray-200">{classDetails.teacher_names}</p>
-                  </div>
+                  <ul className="divide-y divide-gray-200">
+                    {classTeachers.map((teacher) => (
+                      <li key={teacher.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-100 transition">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{teacher.name}</p>
+                          <p className="text-xs text-gray-500">{teacher.email}</p>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveTeacher(teacher.id)}
+                          className="px-3 py-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-
-              <p className="text-xs text-gray-500 text-center">Select a teacher from the dropdown and click Add to assign them to this class.</p>
             </div>
           )}
         </div>

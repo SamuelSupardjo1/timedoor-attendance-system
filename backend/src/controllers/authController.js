@@ -1,13 +1,13 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authModel = require("../models/authModel");
-
+const responseHandler = require("../utils/responseHandler");
 
 const getMe = async (req, res, next) => {
   try {
     const user = await authModel.getUserById(req.user.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
+    if (!user) return responseHandler.notFound(res, "User not found");
+    responseHandler.success(res, 200, user);
   } catch (err) {
     next(err);
   }
@@ -18,11 +18,11 @@ const register = async (req, res, next) => {
     const { name, email, password, role, parent_id } = req.body;
 
     const existing = await authModel.getUserByEmail(email);
-    if (existing) return res.status(400).json({ message: "Email already in use" });
+    if (existing) return responseHandler.conflict(res, "Email already in use");
     
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await authModel.createUser(name, email, hashedPassword, role, parent_id);
-    res.status(201).json({ message: "User registered", user });
+    responseHandler.success(res, 201, { user }, "User registered successfully", "CREATED");
   } catch (err) {
     next(err);
   }
@@ -33,10 +33,10 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await authModel.getUserByEmail(email);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return responseHandler.notFound(res, "User not found");
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+    if (!isMatch) return responseHandler.error(res, 400, "Invalid credentials", "INVALID_CREDENTIALS");
 
     const token = jwt.sign(
       { id: user.id, role: user.role },
@@ -44,7 +44,7 @@ const login = async (req, res, next) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ message: "Login successful", token });
+    responseHandler.success(res, 200, { token, user }, "Login successful");
   } catch (err) {
     next(err);
   }

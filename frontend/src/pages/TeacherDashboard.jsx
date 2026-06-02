@@ -2,7 +2,7 @@ import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
-import { MdMeetingRoom, MdMenuBook } from "react-icons/md";
+import { MdMeetingRoom, MdMenuBook, MdCheckCircle } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 const StatCard = ({ label, value, color }) => (
@@ -29,8 +29,8 @@ const TeacherDashboard = () => {
         ]);
 
         setStats({
-          meetings: meetings.data.meta.total,
-          courses: courses.data.meta.total,
+          meetings: meetings.data.data.meta.total,
+          courses: courses.data.data.meta.total,
         });
       } catch (err) {
         console.error(err);
@@ -59,9 +59,10 @@ const TeacherDashboard = () => {
       {/* Quick Actions */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { label: "New Meeting", path: "/meetings", icon: <MdMeetingRoom size={18}/>, color: "bg-purple-50 text-purple-600" },
+            { label: "Approve Attendance", path: "/attendance-approval", icon: <MdCheckCircle size={18}/>, color: "bg-green-50 text-green-600" },
             { label: "View Courses", path: "/courses", icon: <MdMenuBook size={18}/>, color: "bg-blue-50 text-blue-600" },
           ].map((action) => (
             <button

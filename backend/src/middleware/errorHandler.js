@@ -1,19 +1,33 @@
+const responseHandler = require("../utils/responseHandler");
+const { mapDatabaseError, getErrorDetails } = require("../utils/errorCodes");
+
 const errorHandler = (err, req, res, next) => {
-  console.error(err.stack);
+  console.error(err);
 
-  if (err.code === "23505") {
-    return res.status(400).json({ message: "Duplicate entry — record already exists" });
+  // Handle database errors
+  if (err.code && (err.code === "23505" || err.code === "23503" || err.code === "23502")) {
+    const errorCode = mapDatabaseError(err);
+    const details = getErrorDetails(errorCode);
+    return responseHandler.error(res, details.status, details.message, errorCode);
   }
 
-  if (err.code === "23503") {
-    return res.status(400).json({ message: "Referenced record does not exist" });
+  // Handle validation errors
+  if (err.status === 400 && err.message.includes("validation")) {
+    return responseHandler.validationError(res, err.message, err.errors);
   }
 
-  if (err.code === "23502") {
-    return res.status(400).json({ message: "Missing required field" });
+  // Handle custom application errors
+  if (err.code) {
+    const details = getErrorDetails(err.code);
+    return responseHandler.error(res, err.status || details.status, err.message || details.message, err.code);
   }
 
-  res.status(err.status || 500).json({ message: err.message || "Internal server error" });
+  // Handle generic errors
+  const status = err.status || 500;
+  const message = err.message || "Internal server error";
+  const code = err.code || "INTERNAL_ERROR";
+  
+  responseHandler.error(res, status, message, code);
 };
 
 module.exports = errorHandler;

@@ -76,10 +76,22 @@ const deleteTeacher = async (id) => {
   return result.rows[0];
 };
 
+const getTeacherByUserId = async (user_id) => {
+  const result = await pool.query(
+    `SELECT teachers.*, users.name, users.email
+     FROM teachers
+     JOIN users ON teachers.user_id = users.id
+     WHERE teachers.user_id = $1`,
+    [user_id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createTeacher,
   getTeachers,
   getTeacherById,
+  getTeacherByUserId,
   updateTeacher,
   deleteTeacher
 };

@@ -1,14 +1,13 @@
 const classModel = require("../models/classModel");
+const responseHandler = require("../utils/responseHandler");
 
-// Create a new class
-const createClass = async (req, res) => {
+const createClass = async (req, res, next) => {
   try {
     const { class_name, description } = req.body;
     const newClass = await classModel.createClass(class_name, description);
-    res.status(201).json(newClass);
+    responseHandler.success(res, 201, newClass, "Class created successfully", "CREATED");
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 
@@ -17,7 +16,7 @@ const getClasses = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
     const classes = await classModel.getClasses(page, limit, search);
-    res.json(classes);
+    responseHandler.success(res, 200, classes);
   } catch (err) {
     next(err);
   }
@@ -27,8 +26,8 @@ const getClasses = async (req, res, next) => {
 const getClassById = async (req, res, next) => {
   try {
     const classData = await classModel.getClassById(req.params.id);
-    if (!classData) return res.status(404).json({ message: "Class not found" });
-    res.json(classData);
+    if (!classData) return responseHandler.notFound(res, "Class not found");
+    responseHandler.success(res, 200, classData);
   } catch (err) {
     next(err);
   }
@@ -39,8 +38,8 @@ const updateClass = async (req, res, next) => {
   try {
     const { class_name, description } = req.body;
     const updated = await classModel.updateClass(req.params.id, class_name, description);
-    if (!updated) return res.status(404).json({ message: "Class not found" });
-    res.json(updated);
+    if (!updated) return responseHandler.notFound(res, "Class not found");
+    responseHandler.success(res, 200, updated, "Class updated successfully", "UPDATED");
   } catch (err) {
     next(err);
   }
@@ -50,8 +49,8 @@ const updateClass = async (req, res, next) => {
 const deleteClass = async (req, res, next) => {
   try {
     const deleted = await classModel.deleteClass(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "Class not found" });
-    res.json({ message: "Class deleted", deleted });
+    if (!deleted) return responseHandler.notFound(res, "Class not found");
+    responseHandler.success(res, 200, deleted, "Class deleted successfully", "DELETED");
   } catch (err) {
     next(err);
   }
@@ -62,7 +61,7 @@ const addTeacherToClass = async (req, res, next) => {
   try {
     const { class_id, teacher_id } = req.body;
     const result = await classModel.addTeacherToClass(class_id, teacher_id);
-    res.status(201).json(result || { message: "Teacher already in class" });
+    responseHandler.success(res, 201, result || {}, "Teacher added to class", "CREATED");
   } catch (err) {
     next(err);
   }
@@ -73,7 +72,7 @@ const removeTeacherFromClass = async (req, res, next) => {
   try {
     const { class_id, teacher_id } = req.body;
     const result = await classModel.removeTeacherFromClass(class_id, teacher_id);
-    res.json(result || { message: "Teacher not in class" });
+    responseHandler.success(res, 200, result || {}, "Teacher removed from class", "DELETED");
   } catch (err) {
     next(err);
   }
@@ -83,12 +82,21 @@ const removeTeacherFromClass = async (req, res, next) => {
 const getClassStudents = async (req, res, next) => {
   try {
     const students = await classModel.getClassStudents(req.params.id);
-    res.json(students);
+    responseHandler.success(res, 200, students);
   } catch (err) {
     next(err);
   }
 };
 
+// Get teachers in a class
+const getClassTeachers = async (req, res, next) => {
+  try {
+    const teachers = await classModel.getClassTeachers(req.params.id);
+    responseHandler.success(res, 200, teachers);
+  } catch (err) {
+    next(err);
+  }
+};
 // Add student to class
 const addStudentToClass = async (req, res, next) => {
   try {
@@ -152,6 +160,7 @@ module.exports = {
   addTeacherToClass,
   removeTeacherFromClass,
   getClassStudents,
+  getClassTeachers,
   addStudentToClass,
   removeStudentFromClass,
   assignLessonToStudent,

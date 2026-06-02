@@ -41,7 +41,7 @@ const MeetingDetail = () => {
   const fetchFeedback = async () => {
     try {
       const res = await api.get(`/meeting-feedback?meeting_id=${id}&limit=100`);
-      setFeedbacks(res.data.data);
+      setFeedbacks(res.data.data.data);
     } catch (err) {
       console.error(err);
     }
@@ -60,7 +60,7 @@ const MeetingDetail = () => {
     try {
       setLoading(true);
       const res = await api.get(`/attendance?meeting_id=${id}&limit=100`);
-      setAttendance(res.data.data);
+      setAttendance(res.data.data.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -97,15 +97,36 @@ const MeetingDetail = () => {
     }
   };
 
+  const handleStartMeeting = async () => {
+    if (!confirm("Are you sure you want to start this meeting? This will generate attendance records for all students in the class.")) return;
+    try {
+      await api.post(`/meetings/${id}/start`);
+      fetchAttendance();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to start meeting");
+    }
+  };
+
   return (
     <Layout>
-      {/* Back button */}
-      <button
-        onClick={() => navigate("/meetings")}
-        className="flex items-center gap-2 text-gray-400 hover:text-gray-600 mb-6 transition"
-      >
-        <MdArrowBack size={18} /> Back to Meetings
-      </button>
+      <div className="flex items-center justify-between mb-6">
+        {/* Back button */}
+        <button
+          onClick={() => navigate("/meetings")}
+          className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition"
+        >
+          <MdArrowBack size={18} /> Back to Meetings
+        </button>
+
+        {(user?.role === "teacher" || user?.role === "admin") && attendance.length === 0 && (
+          <button
+            onClick={handleStartMeeting}
+            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm"
+          >
+            Start Meeting (Generate Attendance)
+          </button>
+        )}
+      </div>
 
       {/* Meeting Info */}
       {meeting && (

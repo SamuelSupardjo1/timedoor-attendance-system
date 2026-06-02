@@ -18,8 +18,8 @@ const Teachers = () => {
     try {
         setLoading(true);
         const res = await api.get(`/teachers?page=${page}&limit=10&search=${search}`);
-        setTeachers(res.data.data);
-        setMeta(res.data.meta);
+        setTeachers(res.data.data.data);
+        setMeta(res.data.data.meta);
     } catch (err) {
         console.error(err);
     } finally {

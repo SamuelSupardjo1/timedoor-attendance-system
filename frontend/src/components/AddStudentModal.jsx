@@ -15,7 +15,7 @@ const AddStudentModal = ({ onClose, onSuccess }) => {
     const fetchParents = async () => {
       try {
         const res = await api.get("/users?limit=100");
-        const parentUsers = res.data.data.filter((u) => u.role === "parent");
+        const parentUsers = res.data.data.data.filter((u) => u.role === "parent");
         setParents(parentUsers);
       } catch (err) {
         console.error(err);

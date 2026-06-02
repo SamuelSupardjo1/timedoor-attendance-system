@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { MdDashboard, MdMeetingRoom, MdPeople, MdMenuBook, MdLogout } from "react-icons/md";
+import { MdDashboard, MdMeetingRoom, MdPeople, MdMenuBook, MdLogout, MdCheckCircle } from "react-icons/md";
 import { PiStudentFill } from "react-icons/pi";
 import timedoorLogo from "../assets/timedoor_logo.png";
 
@@ -20,6 +20,7 @@ const getNavItems = (role) => {
     ],
     teacher: [
       { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
+      { label: "Attendance Approval", path: "/attendance-approval", icon: <MdCheckCircle size={18} /> },
       { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
     ],
     student: [],

@@ -20,8 +20,8 @@ const Classes = () => {
     try {
       setLoading(true);
       const res = await api.get(`/classes?page=${page}&limit=10&search=${search}`);
-      setClasses(res.data.data);
-      setMeta(res.data.meta);
+      setClasses(res.data.data.data);
+      setMeta(res.data.data.meta);
     } catch (err) {
       console.error(err);
     } finally {

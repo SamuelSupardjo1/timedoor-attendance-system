@@ -114,6 +114,57 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleTryAgain = (meetingId) => {
+    // Clear the rejected submission to allow resubmission
+    setSubmittedCodes(prev => {
+      const updated = { ...prev };
+      delete updated[meetingId];
+      return updated;
+    });
+    setCodeInput(prev => ({ ...prev, [meetingId]: '' }));
+  };
+
+  const handleResubmitCode = async (meetingId) => {
+    // Security validation: Ensure studentId is set
+    if (!studentId) {
+      alert("Student ID not found. Please refresh and try again.");
+      return;
+    }
+
+    const code = codeInput[meetingId];
+    if (!code || code.length !== 6) {
+      alert("Please enter a valid 6-digit code");
+      return;
+    }
+
+    // Validate that the meeting exists in the current student's meetings
+    const meeting = meetings.find(m => m.meeting_id === meetingId);
+    if (!meeting) {
+      alert("Invalid meeting selected");
+      return;
+    }
+
+    try {
+      const res = await api.post("/attendance/resubmit-code", {
+        student_id: studentId,
+        meeting_id: meetingId,
+        code: code
+      });
+
+      setSubmittedCodes(prev => ({
+        ...prev,
+        [meetingId]: { code: code, status: 'pending' }
+      }));
+
+      setCodeInput(prev => ({ ...prev, [meetingId]: '' }));
+      alert("Code resubmitted successfully! Waiting for teacher approval.");
+    } catch (err) {
+      console.error("Error resubmitting code:", err);
+      const errorMessage = err.response?.data?.message || "Failed to resubmit code. Please try again.";
+      alert(errorMessage);
+    }
+  };
+
   const getApprovalStatusColor = (status) => {
     switch (status) {
       case 'approved':
@@ -229,6 +280,42 @@ const StudentDashboard = () => {
                       Ask your teacher for the attendance code to mark your presence
                     </p>
                   </div>
+                ) : submittedCodes[meeting.meeting_id].status === 'rejected' ? (
+                  <div className="bg-red-50 rounded-xl p-6 border border-red-200">
+                    <div className="mb-4">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="text-sm text-red-600 font-semibold mb-1">Code Rejected</p>
+                          <p className="text-2xl font-mono font-bold text-red-900">{submittedCodes[meeting.meeting_id].code}</p>
+                          <p className="text-xs text-red-600 mt-1">The code you submitted was incorrect. Please try again.</p>
+                        </div>
+                        <button
+                          onClick={() => handleTryAgain(meeting.meeting_id)}
+                          className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors text-sm"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                      {codeInput[meeting.meeting_id] !== undefined && codeInput[meeting.meeting_id] !== '' ? (
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            value={codeInput[meeting.meeting_id]}
+                            onChange={(e) => handleCodeChange(meeting.meeting_id, e.target.value)}
+                            placeholder="000000"
+                            maxLength="6"
+                            className="flex-1 px-4 py-3 text-2xl text-center tracking-widest border-2 border-orange-300 rounded-lg focus:outline-none focus:border-orange-600 font-mono"
+                          />
+                          <button
+                            onClick={() => handleResubmitCode(meeting.meeting_id)}
+                            className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition-colors"
+                          >
+                            Resubmit
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 ) : (
                   <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
                     <div className="flex items-center justify-between">
@@ -241,7 +328,6 @@ const StudentDashboard = () => {
                         <p className="text-lg font-semibold capitalize">
                           {submittedCodes[meeting.meeting_id].status === 'pending' && '⏳ Waiting for Approval'}
                           {submittedCodes[meeting.meeting_id].status === 'approved' && '✓ Approved'}
-                          {submittedCodes[meeting.meeting_id].status === 'rejected' && '✗ Rejected'}
                         </p>
                       </div>
                     </div>

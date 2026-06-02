@@ -19,13 +19,9 @@ const Login = () => {
 
     try {
       const res = await api.post("/auth/login", { email, password });
-      const { token } = res.data;
+      const { token, user } = res.data.data;
 
-      const userRes = await api.get("/auth/me", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      login(token, userRes.data);
+      login(token, user);
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");

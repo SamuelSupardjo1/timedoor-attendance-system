@@ -29,7 +29,7 @@ const CourseDetail = () => {
     try {
       setLoading(true);
       const res = await api.get(`/lessons?course_id=${id}&limit=100`);
-      setLessons(res.data.data);
+      setLessons(res.data.data.data);
     } catch (err) {
       console.error(err);
     } finally {

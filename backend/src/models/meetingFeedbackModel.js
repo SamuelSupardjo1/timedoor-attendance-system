@@ -11,10 +11,10 @@ const createFeedback = async (meeting_id , student_id, teacher_id, feedback, med
   return result.rows[0];
 };
 
-const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null, student_id = null) => {
+const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null, student_id = null, parent_id = null) => {
   const offset = (page - 1) * limit;
 
-  // Build WHERE clause - students can only see their own feedback
+  // Build WHERE clause - students see only their own, parents see their children's
   let whereConditions = [];
   let params = [];
   let paramIndex = 1;
@@ -22,6 +22,12 @@ const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null
   if (student_id) {
     whereConditions.push(`meeting_feedback.student_id = $${paramIndex}`);
     params.push(student_id);
+    paramIndex++;
+  }
+
+  if (parent_id) {
+    whereConditions.push(`students.parent_id = $${paramIndex}`);
+    params.push(parent_id);
     paramIndex++;
   }
 
@@ -58,6 +64,8 @@ const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null
   const totalParams = params.slice(0, params.length - 2);
   const countResult = await pool.query(`
     SELECT COUNT(*) FROM meeting_feedback
+    JOIN meetings ON meeting_feedback.meeting_id = meetings.id
+    JOIN students ON meeting_feedback.student_id = students.id
     ${whereClause}
   `, totalParams);
 
@@ -72,9 +80,9 @@ const getFeedbacks = async (page = 1, limit = 10, search = "", meeting_id = null
   };
 };
 
-const getFeedbackById = async (id, student_id = null) => {
+const getFeedbackById = async (id, student_id = null, parent_id = null) => {
   let query = `
-    SELECT meeting_feedback.*, meetings.date, students.user_id AS student_user_id, teachers.user_id AS teacher_user_id
+    SELECT meeting_feedback.*, meetings.date, students.user_id AS student_user_id, teachers.user_id AS teacher_user_id, students.parent_id
     FROM meeting_feedback
     JOIN meetings ON meeting_feedback.meeting_id = meetings.id
     JOIN students ON meeting_feedback.student_id = students.id
@@ -87,6 +95,11 @@ const getFeedbackById = async (id, student_id = null) => {
   if (student_id) {
     query += ` AND meeting_feedback.student_id = $2`;
     params.push(student_id);
+  }
+  // If parent_id provided, ensure they can only see their children's feedback
+  else if (parent_id) {
+    query += ` AND students.parent_id = $2`;
+    params.push(parent_id);
   }
 
   const result = await pool.query(query, params);

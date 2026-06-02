@@ -1,7 +1,8 @@
 const pool = require("../config/db");
 
 const createMeeting = async (class_id, date) => {
-  const attendance_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // Generate 6-digit numeric code (matches student submission format)
+  const attendance_code = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
 
   const result = await pool.query(
     `INSERT INTO meetings (class_id, date, attendance_code)
@@ -92,10 +93,30 @@ const deleteMeeting = async (id) => {
   return result.rows[0];
 };
 
+const startMeeting = async (meeting_id) => {
+  const meetingRes = await pool.query(`SELECT class_id FROM meetings WHERE id = $1`, [meeting_id]);
+  if (!meetingRes.rows[0]) return null;
+  const class_id = meetingRes.rows[0].class_id;
+
+  await pool.query(`
+    INSERT INTO attendance (student_id, meeting_id, status)
+    SELECT cs.student_id, $1, 'absent'
+    FROM class_students cs
+    WHERE cs.class_id = $2
+    AND NOT EXISTS (
+      SELECT 1 FROM attendance a 
+      WHERE a.student_id = cs.student_id AND a.meeting_id = $1
+    )
+  `, [meeting_id, class_id]);
+  
+  return true;
+};
+
 module.exports = {
   createMeeting,
   getMeetings,
   getMeetingById,
   updateMeeting,
-  deleteMeeting
+  deleteMeeting,
+  startMeeting
 };

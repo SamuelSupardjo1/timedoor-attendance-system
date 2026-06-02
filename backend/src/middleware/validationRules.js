@@ -40,8 +40,7 @@ const lessonRules = [
 ];
 
 const meetingRules = [
-  body("lesson_id").isInt().withMessage("Valid lesson_id is required"),
-  body("teacher_id").isInt().withMessage("Valid teacher_id is required"),
+  body("class_id").isInt().withMessage("Valid class_id is required"),
   body("date").isDate().withMessage("Valid date is required (YYYY-MM-DD)"),
 ];
 

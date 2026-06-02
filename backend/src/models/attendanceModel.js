@@ -11,12 +11,35 @@ const markAttendance = async (student_id, meeting_id , lesson_id, status) => {
   return result.rows[0];
 };
 
-const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = null) => {
+const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = null, parent_id = null) => {
   const offset = (page - 1) * limit;
+  
+  let params = [];
+  let paramIndex = 1;
+  let whereConditions = [];
 
-  const whereClause = meeting_id
-    ? `WHERE attendance.meeting_id = ${meeting_id} AND (users.name ILIKE '%${search}%' OR attendance.status ILIKE '%${search}%')`
-    : `WHERE (users.name ILIKE '%${search}%' OR attendance.status ILIKE '%${search}%')`;
+  if (search) {
+    whereConditions.push(`(users.name ILIKE $${paramIndex} OR attendance.status ILIKE $${paramIndex})`);
+    params.push(`%${search}%`);
+    paramIndex++;
+  }
+
+  if (meeting_id) {
+    whereConditions.push(`attendance.meeting_id = $${paramIndex}`);
+    params.push(meeting_id);
+    paramIndex++;
+  }
+
+  if (parent_id) {
+    whereConditions.push(`students.parent_id = $${paramIndex}`);
+    params.push(parent_id);
+    paramIndex++;
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  params.push(limit);
+  params.push(offset);
 
   const result = await pool.query(`
     SELECT 
@@ -33,27 +56,29 @@ const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = nul
     FROM attendance
     JOIN students ON attendance.student_id = students.id
     JOIN users ON students.user_id = users.id
-    JOIN lessons ON attendance.lesson_id = lessons.id
-    JOIN courses ON lessons.course_id = courses.id
+    LEFT JOIN lessons ON attendance.lesson_id = lessons.id
+    LEFT JOIN courses ON lessons.course_id = courses.id
     JOIN meetings ON attendance.meeting_id = meetings.id
     JOIN classes ON meetings.class_id = classes.id
     LEFT JOIN class_teachers ON classes.id = class_teachers.class_id
     LEFT JOIN teachers ON class_teachers.teacher_id = teachers.id
     LEFT JOIN users AS teacher_users ON teachers.user_id = teacher_users.id
     ${whereClause}
-    LIMIT $1 OFFSET $2
-  `, [limit, offset]);
+    ORDER BY attendance.created_at DESC
+    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+  `, params);
 
+  const countParams = params.slice(0, params.length - 2);
   const total = await pool.query(`
     SELECT COUNT(DISTINCT attendance.id) FROM attendance
     JOIN students ON attendance.student_id = students.id
     JOIN users ON students.user_id = users.id
-    JOIN lessons ON attendance.lesson_id = lessons.id
-    JOIN courses ON lessons.course_id = courses.id
+    LEFT JOIN lessons ON attendance.lesson_id = lessons.id
+    LEFT JOIN courses ON lessons.course_id = courses.id
     JOIN meetings ON attendance.meeting_id = meetings.id
     JOIN classes ON meetings.class_id = classes.id
     ${whereClause}
-  `);
+  `, countParams);
 
   return {
     data: result.rows,
@@ -61,28 +86,35 @@ const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = nul
       total: parseInt(total.rows[0].count),
       page: parseInt(page),
       limit: parseInt(limit),
-      totalPages: Math.ceil(total.rows[0].count / limit)
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / limit)
     }
   };
 };
 
-const getAttendanceById = async (id) => {
-  const result = await pool.query(
-    `SELECT attendance.*, students.user_id, meetings.date, meetings.attendance_code, 
+const getAttendanceById = async (id, parent_id = null) => {
+  let query = `
+    SELECT attendance.*, students.user_id, meetings.date, meetings.attendance_code, 
             lessons.lesson_name, lessons.lesson_number, lessons.status AS lesson_status, courses.course_name, classes.class_name,
             teacher_users.name AS teacher_name
      FROM attendance
      JOIN students ON attendance.student_id = students.id
      JOIN meetings ON attendance.meeting_id = meetings.id
-     JOIN lessons ON attendance.lesson_id = lessons.id
-     JOIN courses ON lessons.course_id = courses.id
+     LEFT JOIN lessons ON attendance.lesson_id = lessons.id
+     LEFT JOIN courses ON lessons.course_id = courses.id
      JOIN classes ON meetings.class_id = classes.id
      LEFT JOIN class_teachers ON classes.id = class_teachers.class_id
      LEFT JOIN teachers ON class_teachers.teacher_id = teachers.id
      LEFT JOIN users AS teacher_users ON teachers.user_id = teacher_users.id
-     WHERE attendance.id = $1`,
-    [id]
-  );
+     WHERE attendance.id = $1
+  `;
+  let params = [id];
+
+  if (parent_id) {
+    query += ` AND students.parent_id = $2`;
+    params.push(parent_id);
+  }
+
+  const result = await pool.query(query, params);
   return result.rows[0];
 };
 
@@ -139,7 +171,7 @@ const submitAttendanceCode = async (student_id, meeting_id, code) => {
   // First try to update existing attendance record
   let result = await pool.query(`
     UPDATE attendance 
-    SET code_submitted = $1, submitted_at = NOW(), approval_status = 'pending'
+    SET code_submitted = $1, submitted_at = NOW(), approval_status = 'pending', status = 'present'
     WHERE student_id = $2 AND meeting_id = $3
     RETURNING *
   `, [code, student_id, meeting_id]);
@@ -148,7 +180,7 @@ const submitAttendanceCode = async (student_id, meeting_id, code) => {
   if (!result.rows[0]) {
     result = await pool.query(`
       INSERT INTO attendance (student_id, meeting_id, code_submitted, submitted_at, approval_status, status)
-      VALUES ($1, $2, $3, NOW(), 'pending', 'pending')
+      VALUES ($1, $2, $3, NOW(), 'pending', 'present')
       RETURNING *
     `, [student_id, meeting_id, code]);
   }
@@ -179,7 +211,7 @@ const getPendingAttendance = async (teacher_id, page = 1, limit = 10) => {
     JOIN users u ON s.user_id = u.id
     JOIN meetings m ON a.meeting_id = m.id
     JOIN classes c ON m.class_id = c.id
-    JOIN lessons l ON a.lesson_id = l.id
+    LEFT JOIN lessons l ON a.lesson_id = l.id
     JOIN class_teachers ct ON c.id = ct.class_id
     WHERE ct.teacher_id = $1 AND a.approval_status = 'pending' AND a.code_submitted IS NOT NULL
     ORDER BY a.submitted_at DESC
@@ -218,6 +250,19 @@ const approveAttendance = async (attendance_id, approved) => {
   return result.rows[0];
 };
 
+// Resubmit attendance code (for rejected submissions)
+const resubmitAttendanceCode = async (student_id, meeting_id, code) => {
+  // Update existing rejected attendance record to allow resubmission
+  const result = await pool.query(`
+    UPDATE attendance 
+    SET code_submitted = $1, submitted_at = NOW(), approval_status = 'pending', status = 'present'
+    WHERE student_id = $2 AND meeting_id = $3 AND approval_status = 'rejected'
+    RETURNING *
+  `, [code, student_id, meeting_id]);
+  
+  return result.rows[0] || null;
+};
+
 module.exports = {
   markAttendance,
   getAttendance,
@@ -227,5 +272,6 @@ module.exports = {
   getStudentActiveMeetings,
   submitAttendanceCode,
   getPendingAttendance,
-  approveAttendance
+  approveAttendance,
+  resubmitAttendanceCode
 };

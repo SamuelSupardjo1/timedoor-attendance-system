@@ -1,4 +1,5 @@
 const lessonModel = require("../models/lessonModel");
+const responseHandler = require("../utils/responseHandler");
 
 const { createLesson: createLessonModel } = require("../models/lessonModel");
 
@@ -6,7 +7,7 @@ const createLesson = async (req, res, next) => {
   try {
     const { course_id, lesson_number, lesson_name } = req.body;
     const lesson = await createLessonModel(course_id, lesson_number, lesson_name);
-    res.status(201).json(lesson);
+    responseHandler.success(res, 201, lesson, "Lesson created successfully", "CREATED");
   } catch (err) {
     next(err);
   }
@@ -16,11 +17,17 @@ const getLessons = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "", course_id = null } = req.query;
     
-    // If user is a student, only show lessons from their enrolled courses
-    const student_id = req.user.role === 'student' ? req.user.id : null;
+    let student_id = null;
+    let parent_id = null;
     
-    const lessons = await lessonModel.getLessons(page, limit, search, course_id, student_id);
-    res.json(lessons);
+    if (req.user.role === 'student') {
+      student_id = req.user.id;
+    } else if (req.user.role === 'parent') {
+      parent_id = req.user.id;
+    }
+    
+    const lessons = await lessonModel.getLessons(page, limit, search, course_id, student_id, parent_id);
+    responseHandler.success(res, 200, lessons);
   } catch (err) {
     next(err);
   }
@@ -28,12 +35,18 @@ const getLessons = async (req, res, next) => {
 
 const getLessonById = async (req, res, next) => {
   try {
-    // If user is a student, they can only see lessons from their enrolled courses
-    const student_id = req.user.role === 'student' ? req.user.id : null;
+    let student_id = null;
+    let parent_id = null;
     
-    const lesson = await lessonModel.getLessonById(req.params.id, student_id);
-    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
-    res.json(lesson);
+    if (req.user.role === 'student') {
+      student_id = req.user.id;
+    } else if (req.user.role === 'parent') {
+      parent_id = req.user.id;
+    }
+    
+    const lesson = await lessonModel.getLessonById(req.params.id, student_id, parent_id);
+    if (!lesson) return responseHandler.notFound(res, "Lesson not found");
+    responseHandler.success(res, 200, lesson);
   } catch (err) {
     next(err);
   }
@@ -43,8 +56,8 @@ const updateLesson = async (req, res, next) => {
   try {
     const { course_id, lesson_number, lesson_name } = req.body;
     const lesson = await lessonModel.updateLesson(req.params.id, course_id, lesson_number, lesson_name);
-    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
-    res.json(lesson);
+    if (!lesson) return responseHandler.notFound(res, "Lesson not found");
+    responseHandler.success(res, 200, lesson, "Lesson updated successfully", "UPDATED");
   } catch (err) {
     next(err);
   }
@@ -53,8 +66,8 @@ const updateLesson = async (req, res, next) => {
 const deleteLesson = async (req, res, next) => {
   try {
     const lesson = await lessonModel.deleteLesson(req.params.id);
-    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
-    res.json({ message: "Lesson deleted", lesson });
+    if (!lesson) return responseHandler.notFound(res, "Lesson not found");
+    responseHandler.success(res, 200, lesson, "Lesson deleted successfully", "DELETED");
   } catch (err) {
     next(err);
   }

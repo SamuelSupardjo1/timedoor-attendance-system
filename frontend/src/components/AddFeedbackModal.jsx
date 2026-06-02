@@ -20,8 +20,8 @@ const AddFeedbackModal = ({ onClose, onSuccess, meetingId }) => {
           api.get("/students?limit=100"),
           api.get("/teachers?limit=100"),
         ]);
-        setStudents(studentsRes.data.data);
-        setTeachers(teachersRes.data.data);
+        setStudents(studentsRes.data.data.data);
+        setTeachers(teachersRes.data.data.data);
       } catch (err) {
         console.error(err);
       }

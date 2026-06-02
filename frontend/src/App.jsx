@@ -9,6 +9,7 @@ import Meetings from "./pages/Meetings";
 import MeetingDetail from "./pages/MeetingDetail";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
+import AttendanceApproval from "./pages/AttendanceApproval";
 import Unauthorized from "./pages/Unauthorized";
 
 function App() {
@@ -53,6 +54,14 @@ function App() {
         element={
           <ProtectedRoute roles={["admin", "teacher"]}>
             <Meetings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attendance-approval"
+        element={
+          <ProtectedRoute roles={["admin", "teacher"]}>
+            <AttendanceApproval />
           </ProtectedRoute>
         }
       />

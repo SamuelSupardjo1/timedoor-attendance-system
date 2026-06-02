@@ -17,16 +17,13 @@ const ParentDashboard = () => {
     const fetchStudents = async () => {
       try {
         setError(null);
+        // No need to pass parent_id - backend automatically filters for authenticated parent
         const studentsRes = await api.get("/students", {
           params: {
-            parent_id: user?.id,
             limit: 100
           }
         });
         const parentStudents = studentsRes.data.data || [];
-        
-        console.log("Parent ID:", user?.id);
-        console.log("Parent's students:", parentStudents);
         
         setStudents(parentStudents);
         
@@ -56,28 +53,23 @@ const ParentDashboard = () => {
         setLoading(true);
         setError(null);
         
-        const attendanceRes = await api.get("/attendance?limit=100");
-        const attendance = attendanceRes.data.data || [];
+        // With parent filtering, these now automatically return only the parent's data
+        const attendanceRes = await api.get("/attendance", { params: { limit: 100 } });
+        const attendance = attendanceRes.data.data.data || [];
 
         // Filter attendance for this specific student
         const studentAttendance = attendance.filter(a => a.student_id === selectedStudentId);
-
-        console.log("Student ID:", selectedStudentId);
-        console.log("All attendance:", attendance);
-        console.log("Student attendance:", studentAttendance);
 
         if (studentAttendance.length > 0) {
           // Get the most recent attendance record for this student
           const latestAttendance = studentAttendance[0];
           const selectedStudent = students.find(s => s.id === selectedStudentId);
 
-          console.log("Latest attendance:", latestAttendance);
-
-          // Fetch lessons to get total lesson count for the course
+          // Fetch lessons - now automatically filtered for parent's children's courses
           let maxLessonNumber = "--";
           try {
-            const lessonsRes = await api.get("/lessons?limit=1000");
-            const lessons = lessonsRes.data.data || [];
+            const lessonsRes = await api.get("/lessons", { params: { limit: 1000 } });
+            const lessons = lessonsRes.data.data.data || [];
             // Find lessons for this course and get the max lesson number
             const courseLessons = lessons.filter(l => l.course_name === latestAttendance.course_name || l.course_id === latestAttendance.course_id);
             if (courseLessons.length > 0) {

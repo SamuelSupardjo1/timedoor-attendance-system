@@ -135,6 +135,24 @@ const getClassStudents = async (class_id) => {
   return result.rows;
 };
 
+const getClassTeachers = async (class_id) => {
+  const result = await pool.query(`
+    SELECT 
+      teachers.id,
+      teachers.user_id,
+      users.name,
+      users.email,
+      users.role
+    FROM class_teachers
+    JOIN teachers ON class_teachers.teacher_id = teachers.id
+    JOIN users ON teachers.user_id = users.id
+    WHERE class_teachers.class_id = $1
+    ORDER BY users.name
+  `, [class_id]);
+
+  return result.rows;
+};
+
 // Add student to class
 const addStudentToClass = async (class_id, student_id) => {
   const result = await pool.query(
@@ -204,6 +222,7 @@ module.exports = {
   addTeacherToClass,
   removeTeacherFromClass,
   getClassStudents,
+  getClassTeachers,
   addStudentToClass,
   removeStudentFromClass,
   assignLessonToStudent,

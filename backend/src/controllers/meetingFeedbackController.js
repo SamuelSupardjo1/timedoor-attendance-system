@@ -1,6 +1,7 @@
 const meetingFeedbackModel = require("../models/meetingFeedbackModel");
+const responseHandler = require("../utils/responseHandler");
 
-const createFeedback = async (req, res) => {
+const createFeedback = async (req, res, next) => {
   try {
     const { meeting_id , student_id, teacher_id, feedback, media_url } = req.body;
 
@@ -12,10 +13,9 @@ const createFeedback = async (req, res) => {
       media_url
     );
 
-    res.json(result);
+    responseHandler.success(res, 201, result, "Feedback created successfully", "CREATED");
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 
@@ -23,11 +23,21 @@ const getFeedbacks = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "", meeting_id = null } = req.query;
     
-    // If user is a student, only show their own feedback
-    const student_id = req.user.role === 'student' ? req.user.id : null;
+    // Filter by role:
+    // - students see only their own feedback
+    // - parents see their children's feedback
+    // - admin/teacher see all feedback
+    let student_id = null;
+    let parent_id = null;
     
-    const feedbacks = await meetingFeedbackModel.getFeedbacks(page, limit, search, meeting_id, student_id);
-    res.json(feedbacks);
+    if (req.user.role === 'student') {
+      student_id = req.user.id;
+    } else if (req.user.role === 'parent') {
+      parent_id = req.user.id;
+    }
+    
+    const feedbacks = await meetingFeedbackModel.getFeedbacks(page, limit, search, meeting_id, student_id, parent_id);
+    responseHandler.success(res, 200, feedbacks);
   } catch (err) {
     next(err);
   }
@@ -35,12 +45,18 @@ const getFeedbacks = async (req, res, next) => {
 
 const getFeedbackById = async (req, res, next) => {
   try {
-    // If user is a student, they can only see their own feedback
-    const student_id = req.user.role === 'student' ? req.user.id : null;
+    let student_id = null;
+    let parent_id = null;
     
-    const feedback = await meetingFeedbackModel.getFeedbackById(req.params.id, student_id);
-    if (!feedback) return res.status(404).json({ message: "Feedback not found" });
-    res.json(feedback);
+    if (req.user.role === 'student') {
+      student_id = req.user.id;
+    } else if (req.user.role === 'parent') {
+      parent_id = req.user.id;
+    }
+    
+    const feedback = await meetingFeedbackModel.getFeedbackById(req.params.id, student_id, parent_id);
+    if (!feedback) return responseHandler.notFound(res, "Feedback not found");
+    responseHandler.success(res, 200, feedback);
   } catch (err) {
     next(err);
   }
@@ -50,8 +66,8 @@ const updateFeedback = async (req, res, next) => {
   try {
     const { feedback, media_url } = req.body;
     const result = await meetingFeedbackModel.updateFeedback(req.params.id, feedback, media_url);
-    if (!result) return res.status(404).json({ message: "Feedback not found" });
-    res.json(result);
+    if (!result) return responseHandler.notFound(res, "Feedback not found");
+    responseHandler.success(res, 200, result, "Feedback updated successfully", "UPDATED");
   } catch (err) {
     next(err);
   }
@@ -60,8 +76,8 @@ const updateFeedback = async (req, res, next) => {
 const deleteFeedback = async (req, res, next) => {
   try {
     const feedback = await meetingFeedbackModel.deleteFeedback(req.params.id);
-    if (!feedback) return res.status(404).json({ message: "Feedback not found" });
-    res.json({ message: "Feedback deleted", feedback });
+    if (!feedback) return responseHandler.notFound(res, "Feedback not found");
+    responseHandler.success(res, 200, feedback, "Feedback deleted successfully", "DELETED");
   } catch (err) {
     next(err);
   }

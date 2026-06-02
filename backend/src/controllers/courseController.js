@@ -1,15 +1,15 @@
 const courseModel = require("../models/courseModel");
+const responseHandler = require("../utils/responseHandler");
 
-const createCourse = async (req, res) => {
+const createCourse = async (req, res, next) => {
   try {
     const { course_name, description } = req.body;
 
     const course = await courseModel.createCourse(course_name, description);
 
-    res.json(course);
+    responseHandler.success(res, 201, course, "Course created successfully", "CREATED");
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+    next(err);
   }
 };
 
@@ -17,7 +17,7 @@ const getCourses = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
     const courses = await courseModel.getCourses(page, limit, search);
-    res.json(courses);
+    responseHandler.success(res, 200, courses);
   } catch (err) {
     next(err);
   }
@@ -26,8 +26,8 @@ const getCourses = async (req, res, next) => {
 const getCourseById = async (req, res, next) => {
   try {
     const course = await courseModel.getCourseById(req.params.id);
-    if (!course) return res.status(404).json({ message: "Course not found" });
-    res.json(course);
+    if (!course) return responseHandler.notFound(res, "Course not found");
+    responseHandler.success(res, 200, course);
   } catch (err) {
     next(err);
   }
@@ -37,8 +37,8 @@ const updateCourse = async (req, res, next) => {
   try {
     const { course_name, description } = req.body;
     const course = await courseModel.updateCourse(req.params.id, course_name, description);
-    if (!course) return res.status(404).json({ message: "Course not found" });
-    res.json(course);
+    if (!course) return responseHandler.notFound(res, "Course not found");
+    responseHandler.success(res, 200, course, "Course updated successfully", "UPDATED");
   } catch (err) {
     next(err);
   }
@@ -47,8 +47,8 @@ const updateCourse = async (req, res, next) => {
 const deleteCourse = async (req, res, next) => {
   try {
     const course = await courseModel.deleteCourse(req.params.id);
-    if (!course) return res.status(404).json({ message: "Course not found" });
-    res.json({ message: "Course deleted", course });
+    if (!course) return responseHandler.notFound(res, "Course not found");
+    responseHandler.success(res, 200, course, "Course deleted successfully", "DELETED");
   } catch (err) {
     next(err);
   }

@@ -13,7 +13,7 @@ const EditMeetingModal = ({ meeting, onClose, onSuccess }) => {
     const fetchData = async () => {
       try {
         const classesRes = await api.get("/classes?limit=100");
-        setClasses(classesRes.data.data);
+        setClasses(classesRes.data.data.data);
       } catch (err) {
         console.error(err);
       }

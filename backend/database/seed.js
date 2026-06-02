@@ -11,7 +11,8 @@ const client = new Client({
 
 // Utility function to generate random code
 const generateAttendanceCode = () => {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
+  // Generate 6-digit numeric code (matches student submission format)
+  return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
 };
 
 async function seedDatabase() {

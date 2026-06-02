@@ -34,10 +34,10 @@ const AdminDashboard = () => {
         ]);
 
         setStats({
-          students: students.data.meta.total,
-          teachers: teachers.data.meta.total,
-          meetings: meetings.data.meta.total,
-          courses: courses.data.meta.total,
+          students: students.data.data?.meta?.total ?? 0,
+          teachers: teachers.data.data?.meta?.total ?? 0,
+          meetings: meetings.data.data?.meta?.total ?? 0,
+          courses: courses.data.data?.meta?.total ?? 0,
         });
       } catch (err) {
         console.error(err);
