@@ -50,13 +50,14 @@ const attendanceRules = [
 ];
 
 const updateAttendanceRules = [
-  body("status").isIn(["present", "absent"]).withMessage("Status must be present or absent"),
+  body("status").optional().isIn(["present", "absent"]).withMessage("Status must be present or absent"),
+  body("lesson_id").optional({ nullable: true }).isInt().withMessage("lesson_id must be an integer"),
 ];
 
 const feedbackRules = [
   body("meeting_id").isInt().withMessage("Valid meeting_id is required"),
   body("student_id").isInt().withMessage("Valid student_id is required"),
-  body("teacher_id").isInt().withMessage("Valid teacher_id is required"),
+  body("teacher_id").optional({ nullable: true }).isInt().withMessage("teacher_id must be an integer"),
   body("feedback").notEmpty().withMessage("Feedback is required"),
   body("media_url").optional({ nullable: true }).isURL().withMessage("media_url must be a valid URL"),
 ];

@@ -1,5 +1,6 @@
 const attendanceModel = require("../models/attendanceModel");
 const responseHandler = require("../utils/responseHandler");
+const teacherModel = require("../models/teacherModel");
 
 const markAttendance = async (req, res, next) => {
   try {
@@ -25,7 +26,10 @@ const getAttendance = async (req, res, next) => {
     // If user is a parent, only show their children's attendance
     const parent_id = req.user.role === 'parent' ? req.user.id : null;
     
-    const attendance = await attendanceModel.getAttendance(page, limit, search, meeting_id, parent_id);
+    // If user is a teacher, filter by teacher's classes
+    const teacher_user_id = req.user.role === 'teacher' ? req.user.id : null;
+    
+    const attendance = await attendanceModel.getAttendance(page, limit, search, meeting_id, parent_id, teacher_user_id);
     responseHandler.success(res, 200, attendance);
   } catch (err) {
     next(err);
@@ -37,7 +41,10 @@ const getAttendanceById = async (req, res, next) => {
     // If user is a parent, they can only see their children's attendance
     const parent_id = req.user.role === 'parent' ? req.user.id : null;
     
-    const attendance = await attendanceModel.getAttendanceById(req.params.id, parent_id);
+    // If user is a teacher, check access
+    const teacher_user_id = req.user.role === 'teacher' ? req.user.id : null;
+    
+    const attendance = await attendanceModel.getAttendanceById(req.params.id, parent_id, teacher_user_id);
     if (!attendance) return responseHandler.notFound(res, "Attendance not found");
     responseHandler.success(res, 200, attendance);
   } catch (err) {
@@ -47,8 +54,16 @@ const getAttendanceById = async (req, res, next) => {
 
 const updateAttendance = async (req, res, next) => {
   try {
-    const { status } = req.body;
-    const attendance = await attendanceModel.updateAttendance(req.params.id, status);
+    const { status, lesson_id } = req.body;
+
+    if (req.user.role === "teacher") {
+      const hasAccess = await attendanceModel.checkTeacherAttendanceAccess(req.user.id, req.params.id);
+      if (!hasAccess) {
+        return responseHandler.forbidden(res, "Access denied. You do not teach the class for this attendance record.");
+      }
+    }
+
+    const attendance = await attendanceModel.updateAttendance(req.params.id, status, lesson_id);
     if (!attendance) return responseHandler.notFound(res, "Attendance not found");
     responseHandler.success(res, 200, attendance, "Attendance updated", "UPDATED");
   } catch (err) {
@@ -114,6 +129,13 @@ const getPendingAttendance = async (req, res, next) => {
     const { teacher_id } = req.params;
     const { page = 1, limit = 10 } = req.query;
     
+    if (req.user.role === "teacher") {
+      const teacher = await teacherModel.getTeacherByUserId(req.user.id);
+      if (!teacher || teacher.id !== parseInt(teacher_id)) {
+        return responseHandler.forbidden(res, "Access denied. You can only view your own pending attendance.");
+      }
+    }
+    
     const result = await attendanceModel.getPendingAttendance(teacher_id, page, limit);
     responseHandler.success(res, 200, result);
   } catch (err) {
@@ -126,6 +148,13 @@ const approveAttendance = async (req, res, next) => {
   try {
     const { attendance_id } = req.params;
     const { approved } = req.body;
+
+    if (req.user.role === "teacher") {
+      const hasAccess = await attendanceModel.checkTeacherAttendanceAccess(req.user.id, attendance_id);
+      if (!hasAccess) {
+        return responseHandler.forbidden(res, "Access denied. You do not teach the class for this attendance record.");
+      }
+    }
 
     const attendance = await attendanceModel.approveAttendance(attendance_id, approved);
     if (!attendance) {

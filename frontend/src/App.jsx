@@ -11,6 +11,7 @@ import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import AttendanceApproval from "./pages/AttendanceApproval";
 import Unauthorized from "./pages/Unauthorized";
+import Parents from "./pages/Parents";
 
 function App() {
   return (
@@ -38,6 +39,14 @@ function App() {
         element={
           <ProtectedRoute roles={["admin"]}>
             <Teachers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parents"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <Parents />
           </ProtectedRoute>
         }
       />
@@ -77,7 +86,7 @@ function App() {
       <Route
         path="/courses"
         element={
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "teacher"]}>
             <Courses />
           </ProtectedRoute>
         }
@@ -85,7 +94,7 @@ function App() {
       <Route
         path="/courses/:id"
         element={
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "teacher"]}>
             <CourseDetail />
           </ProtectedRoute>
         }

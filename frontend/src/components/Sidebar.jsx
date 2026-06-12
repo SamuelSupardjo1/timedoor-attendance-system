@@ -1,7 +1,9 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MdDashboard, MdMeetingRoom, MdPeople, MdMenuBook, MdLogout, MdCheckCircle } from "react-icons/md";
-import { PiStudentFill } from "react-icons/pi";
+import { PiStudentFill, PiBookOpenFill } from "react-icons/pi";
+import { SiGoogleclassroom } from "react-icons/si";
+import { RiParentFill } from "react-icons/ri";
 import timedoorLogo from "../assets/timedoor_logo.png";
 
 // Role-based navigation items
@@ -14,14 +16,15 @@ const getNavItems = (role) => {
     admin: [
       { label: "Students", path: "/students", icon: <PiStudentFill size={18} /> },
       { label: "Teachers", path: "/teachers", icon: <MdPeople size={18} /> },
+      { label: "Parents", path: "/parents", icon: <RiParentFill size={18} /> },
       { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
-      { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
-      { label: "Classes", path: "/classes", icon: <MdMenuBook size={18} /> },
+      { label: "Courses", path: "/courses", icon: <PiBookOpenFill size={18} /> },
+      { label: "Classes", path: "/classes", icon: <SiGoogleclassroom size={18} /> },
     ],
     teacher: [
       { label: "Meetings", path: "/meetings", icon: <MdMeetingRoom size={18} /> },
       { label: "Attendance Approval", path: "/attendance-approval", icon: <MdCheckCircle size={18} /> },
-      { label: "Courses", path: "/courses", icon: <MdMenuBook size={18} /> },
+      { label: "Courses", path: "/courses", icon: <PiBookOpenFill size={18} /> },
     ],
     student: [],
     parent: [],

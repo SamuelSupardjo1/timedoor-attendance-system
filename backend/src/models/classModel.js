@@ -1,21 +1,54 @@
 const pool = require("../config/db");
 
 // Create a new class
-const createClass = async (class_name, description = "") => {
-  const result = await pool.query(
-    `INSERT INTO classes (class_name, description)
-     VALUES ($1, $2)
-     RETURNING *`,
-    [class_name, description]
-  );
-  return result.rows[0];
+const createClass = async (class_name, description = "", teacher_ids = [], student_ids = []) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    
+    const classRes = await client.query(
+      `INSERT INTO classes (class_name, description)
+       VALUES ($1, $2)
+       RETURNING *`,
+      [class_name, description]
+    );
+    const newClass = classRes.rows[0];
+
+    if (teacher_ids && teacher_ids.length > 0) {
+      for (const teacher_id of teacher_ids) {
+        await client.query(
+          `INSERT INTO class_teachers (class_id, teacher_id) VALUES ($1, $2)
+           ON CONFLICT DO NOTHING`,
+          [newClass.id, teacher_id]
+        );
+      }
+    }
+
+    if (student_ids && student_ids.length > 0) {
+      for (const student_id of student_ids) {
+        await client.query(
+          `INSERT INTO class_students (class_id, student_id) VALUES ($1, $2)
+           ON CONFLICT DO NOTHING`,
+          [newClass.id, student_id]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+    return newClass;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 // Get all classes with teacher info
-const getClasses = async (page = 1, limit = 10, search = "") => {
+const getClasses = async (page = 1, limit = 10, search = "", teacherUserId = null) => {
   const offset = (page - 1) * limit;
 
-  const result = await pool.query(`
+  let query = `
     SELECT 
       classes.id,
       classes.class_name,
@@ -30,15 +63,44 @@ const getClasses = async (page = 1, limit = 10, search = "") => {
     LEFT JOIN teachers ON class_teachers.teacher_id = teachers.id
     LEFT JOIN users ON teachers.user_id = users.id
     WHERE classes.class_name ILIKE $1
+  `;
+  const params = [`%${search}%`, limit, offset];
+
+  if (teacherUserId) {
+    query += ` AND classes.id IN (
+      SELECT ct.class_id
+      FROM class_teachers ct
+      JOIN teachers t ON ct.teacher_id = t.id
+      WHERE t.user_id = $4
+    )`;
+    params.push(teacherUserId);
+  }
+
+  query += `
     GROUP BY classes.id
     ORDER BY classes.created_at DESC
     LIMIT $2 OFFSET $3
-  `, [`%${search}%`, limit, offset]);
+  `;
 
-  const total = await pool.query(`
+  const result = await pool.query(query, params);
+
+  let totalQuery = `
     SELECT COUNT(*) FROM classes
     WHERE class_name ILIKE $1
-  `, [`%${search}%`]);
+  `;
+  const totalParams = [`%${search}%`];
+
+  if (teacherUserId) {
+    totalQuery += ` AND classes.id IN (
+      SELECT ct.class_id
+      FROM class_teachers ct
+      JOIN teachers t ON ct.teacher_id = t.id
+      WHERE t.user_id = $2
+    )`;
+    totalParams.push(teacherUserId);
+  }
+
+  const total = await pool.query(totalQuery, totalParams);
 
   return {
     data: result.rows,
@@ -175,6 +237,32 @@ const removeStudentFromClass = async (class_id, student_id) => {
 
 // Assign lesson to student
 const assignLessonToStudent = async (student_id, lesson_id) => {
+  // Check if student already has lessons assigned from another course
+  const existingRes = await pool.query(`
+    SELECT DISTINCT l.course_id, c.course_name
+    FROM student_lessons sl
+    JOIN lessons l ON sl.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE sl.student_id = $1
+  `, [student_id]);
+
+  if (existingRes.rows.length > 0) {
+    const existingCourseId = existingRes.rows[0].course_id;
+    const existingCourseName = existingRes.rows[0].course_name;
+
+    // Get the course of the new lesson
+    const newLessonRes = await pool.query(
+      `SELECT course_id FROM lessons WHERE id = $1`,
+      [lesson_id]
+    );
+    
+    if (newLessonRes.rows[0] && newLessonRes.rows[0].course_id !== existingCourseId) {
+      const error = new Error(`Student is already enrolled in course "${existingCourseName}". Students can only take one course at a time.`);
+      error.status = 400;
+      throw error;
+    }
+  }
+
   const result = await pool.query(
     `INSERT INTO student_lessons (student_id, lesson_id) VALUES ($1, $2)
      ON CONFLICT DO NOTHING
@@ -213,6 +301,17 @@ const getStudentLessons = async (student_id) => {
   return result.rows;
 };
 
+// Check if a teacher (by user_id) teaches a class
+const checkTeacherAccess = async (user_id, class_id) => {
+  const result = await pool.query(`
+    SELECT 1 
+    FROM class_teachers ct
+    JOIN teachers t ON ct.teacher_id = t.id
+    WHERE t.user_id = $1 AND ct.class_id = $2
+  `, [user_id, class_id]);
+  return result.rows.length > 0;
+};
+
 module.exports = {
   createClass,
   getClasses,
@@ -227,5 +326,6 @@ module.exports = {
   removeStudentFromClass,
   assignLessonToStudent,
   removeLessonFromStudent,
-  getStudentLessons
+  getStudentLessons,
+  checkTeacherAccess
 };

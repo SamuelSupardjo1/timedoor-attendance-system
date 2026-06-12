@@ -4,6 +4,7 @@ import api from "../api/axios";
 import AddTeacherModal from "../components/AddTeacherModal";
 import EditTeacherModal from "../components/EditTeacherModal";
 import { MdAdd, MdSearch, MdEdit, MdDelete } from "react-icons/md";
+import { showAlert } from "../utils/alert";
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
@@ -37,12 +38,14 @@ const Teachers = () => {
   };
 
   const handleDelete = async (id, user_id) => {
-    if (!confirm("Are you sure you want to delete this teacher?")) return;
+    const confirmResult = await showAlert.confirm("Are you sure?", "You want to delete this teacher?");
+    if (!confirmResult.isConfirmed) return;
     try {
       await api.delete(`/teachers/${id}`);
+      showAlert.success("Success", "Teacher deleted successfully");
       fetchTeachers();
     } catch (err) {
-      alert(err.response?.data?.message || "Cannot delete teacher");
+      showAlert.error("Error", err.response?.data?.message || "Cannot delete teacher");
     }
   };
 

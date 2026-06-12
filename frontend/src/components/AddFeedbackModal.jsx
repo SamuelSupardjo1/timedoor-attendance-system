@@ -1,33 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MdClose } from "react-icons/md";
 import api from "../api/axios";
 
-const AddFeedbackModal = ({ onClose, onSuccess, meetingId }) => {
+const AddFeedbackModal = ({ onClose, onSuccess, meetingId, studentId }) => {
   const [selectedMeetingId] = useState(meetingId || "");
-  const [studentId, setStudentId] = useState("");
-  const [teacherId, setTeacherId] = useState("");
   const [feedback, setFeedback] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
-  const [students, setStudents] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [studentsRes, teachersRes] = await Promise.all([
-          api.get("/students?limit=100"),
-          api.get("/teachers?limit=100"),
-        ]);
-        setStudents(studentsRes.data.data.data);
-        setTeachers(teachersRes.data.data.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchData();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +18,6 @@ const AddFeedbackModal = ({ onClose, onSuccess, meetingId }) => {
       await api.post("/meeting-feedback", {
         meeting_id: parseInt(selectedMeetingId),
         student_id: parseInt(studentId),
-        teacher_id: parseInt(teacherId),
         feedback,
         media_url: mediaUrl || null,
       });
@@ -64,36 +43,6 @@ const AddFeedbackModal = ({ onClose, onSuccess, meetingId }) => {
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Student</label>
-            <select
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              required
-              className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option value="">Select a student</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Teacher</label>
-            <select
-              value={teacherId}
-              onChange={(e) => setTeacherId(e.target.value)}
-              required
-              className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option value="">Select a teacher</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
-
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Feedback</label>
             <textarea

@@ -3,8 +3,8 @@ const responseHandler = require("../utils/responseHandler");
 
 const createClass = async (req, res, next) => {
   try {
-    const { class_name, description } = req.body;
-    const newClass = await classModel.createClass(class_name, description);
+    const { class_name, description, teacher_ids, student_ids } = req.body;
+    const newClass = await classModel.createClass(class_name, description, teacher_ids, student_ids);
     responseHandler.success(res, 201, newClass, "Class created successfully", "CREATED");
   } catch (err) {
     next(err);
@@ -15,7 +15,8 @@ const createClass = async (req, res, next) => {
 const getClasses = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
-    const classes = await classModel.getClasses(page, limit, search);
+    const teacherUserId = req.user.role === "teacher" ? req.user.id : null;
+    const classes = await classModel.getClasses(page, limit, search, teacherUserId);
     responseHandler.success(res, 200, classes);
   } catch (err) {
     next(err);
@@ -27,6 +28,13 @@ const getClassById = async (req, res, next) => {
   try {
     const classData = await classModel.getClassById(req.params.id);
     if (!classData) return responseHandler.notFound(res, "Class not found");
+
+    if (req.user.role === "teacher") {
+      const isAuthorized = await classModel.checkTeacherAccess(req.user.id, req.params.id);
+      if (!isAuthorized) {
+        return responseHandler.forbidden(res, "Access denied. You do not teach this class.");
+      }
+    }
     responseHandler.success(res, 200, classData);
   } catch (err) {
     next(err);
@@ -81,6 +89,12 @@ const removeTeacherFromClass = async (req, res, next) => {
 // Get students in class
 const getClassStudents = async (req, res, next) => {
   try {
+    if (req.user.role === "teacher") {
+      const isAuthorized = await classModel.checkTeacherAccess(req.user.id, req.params.id);
+      if (!isAuthorized) {
+        return responseHandler.forbidden(res, "Access denied. You do not teach this class.");
+      }
+    }
     const students = await classModel.getClassStudents(req.params.id);
     responseHandler.success(res, 200, students);
   } catch (err) {
@@ -91,6 +105,12 @@ const getClassStudents = async (req, res, next) => {
 // Get teachers in a class
 const getClassTeachers = async (req, res, next) => {
   try {
+    if (req.user.role === "teacher") {
+      const isAuthorized = await classModel.checkTeacherAccess(req.user.id, req.params.id);
+      if (!isAuthorized) {
+        return responseHandler.forbidden(res, "Access denied. You do not teach this class.");
+      }
+    }
     const teachers = await classModel.getClassTeachers(req.params.id);
     responseHandler.success(res, 200, teachers);
   } catch (err) {

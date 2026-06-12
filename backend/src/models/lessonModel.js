@@ -30,25 +30,27 @@ const getLessons = async (page = 1, limit = 10, search = "", course_id = null, s
     paramIndex++;
   }
 
-  // If student_id provided, only show lessons from courses in their enrolled classes
+  // If student_id provided, only show lessons from courses in their assigned student_lessons
   let joinClause = '';
   if (student_id) {
-    joinClause = `
-      JOIN classes ON courses.id = classes.course_id
-      JOIN class_students ON classes.id = class_students.class_id
-    `;
-    whereConditions.push(`class_students.student_id = $${paramIndex}`);
+    whereConditions.push(`lessons.course_id IN (
+      SELECT DISTINCT l2.course_id 
+      FROM student_lessons sl
+      JOIN lessons l2 ON sl.lesson_id = l2.id
+      WHERE sl.student_id = $${paramIndex}
+    )`);
     params.push(student_id);
     paramIndex++;
   }
-  // If parent_id provided, only show lessons from courses their children are enrolled in
+  // If parent_id provided, only show lessons from courses their children are assigned to
   else if (parent_id) {
-    joinClause = `
-      JOIN classes ON courses.id = classes.course_id
-      JOIN class_students ON classes.id = class_students.class_id
-      JOIN students ON class_students.student_id = students.id
-    `;
-    whereConditions.push(`students.parent_id = $${paramIndex}`);
+    whereConditions.push(`lessons.course_id IN (
+      SELECT DISTINCT l2.course_id 
+      FROM student_lessons sl
+      JOIN lessons l2 ON sl.lesson_id = l2.id
+      JOIN students s ON sl.student_id = s.id
+      WHERE s.parent_id = $${paramIndex}
+    )`);
     params.push(parent_id);
     paramIndex++;
   }
@@ -97,14 +99,14 @@ const getLessonById = async (id, student_id = null, parent_id = null) => {
   `;
   let params = [id];
 
-  // If student_id provided, ensure they can only see lessons from their enrolled courses
+  // If student_id provided, ensure they can only see lessons from their assigned courses
   if (student_id) {
     query += `
-      AND EXISTS (
-        SELECT 1 FROM classes
-        JOIN class_students ON classes.id = class_students.class_id
-        WHERE classes.course_id = courses.id
-        AND class_students.student_id = $2
+      AND lessons.course_id IN (
+        SELECT DISTINCT l2.course_id 
+        FROM student_lessons sl
+        JOIN lessons l2 ON sl.lesson_id = l2.id
+        WHERE sl.student_id = $2
       )
     `;
     params.push(student_id);
@@ -112,12 +114,12 @@ const getLessonById = async (id, student_id = null, parent_id = null) => {
   // If parent_id provided, ensure they can only see lessons from their children's courses
   else if (parent_id) {
     query += `
-      AND EXISTS (
-        SELECT 1 FROM classes
-        JOIN class_students ON classes.id = class_students.class_id
-        JOIN students ON class_students.student_id = students.id
-        WHERE classes.course_id = courses.id
-        AND students.parent_id = $2
+      AND lessons.course_id IN (
+        SELECT DISTINCT l2.course_id 
+        FROM student_lessons sl
+        JOIN lessons l2 ON sl.lesson_id = l2.id
+        JOIN students s ON sl.student_id = s.id
+        WHERE s.parent_id = $2
       )
     `;
     params.push(parent_id);

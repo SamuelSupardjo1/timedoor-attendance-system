@@ -6,10 +6,14 @@ import { MdAdd, MdSearch, MdEdit, MdDelete, MdVisibility } from "react-icons/md"
 import { useNavigate } from "react-router-dom";
 import AddCourseModal from "../components/AddCourseModal";
 import EditCourseModal from "../components/EditCourseModal";
+import { showAlert } from "../utils/alert";
 
 const Courses = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAuthorized = user?.role === "admin" || user?.role === "teacher";
+  const [courses, setCourses] = useState([]);
+  const [meta, setMeta] = useState({});
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,12 +44,14 @@ const Courses = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this course?")) return;
+    const confirmResult = await showAlert.confirm("Are you sure?", "You want to delete this course?");
+    if (!confirmResult.isConfirmed) return;
     try {
       await api.delete(`/courses/${id}`);
+      showAlert.success("Success", "Course deleted successfully");
       fetchCourses();
     } catch (err) {
-      alert(err.response?.data?.message || "Cannot delete course");
+      showAlert.error("Error", err.response?.data?.message || "Cannot delete course");
     }
   };
 
@@ -74,7 +80,7 @@ const Courses = () => {
         <div className="bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl text-sm font-medium">
           Total Courses: {meta.total || 0}
         </div>
-        {isAdmin && (
+        {isAuthorized && (
           <button
             onClick={() => setShowAddModal(true)}
             className="ml-auto flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
@@ -128,7 +134,7 @@ const Courses = () => {
                       >
                         <MdVisibility size={16} />
                       </button>
-                      {isAdmin && (
+                      {isAuthorized && (
                         <>
                           <button
                             onClick={() => setEditCourse(course)}
@@ -136,12 +142,14 @@ const Courses = () => {
                           >
                             <MdEdit size={16} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(course.id)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
-                          >
-                            <MdDelete size={16} />
-                          </button>
+                          {user?.role === "admin" && (
+                            <button
+                              onClick={() => handleDelete(course.id)}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                            >
+                              <MdDelete size={16} />
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
@@ -176,13 +184,13 @@ const Courses = () => {
         </div>
       </div>
 
-      {isAdmin && showAddModal && (
+      {isAuthorized && showAddModal && (
         <AddCourseModal
           onClose={() => setShowAddModal(false)}
           onSuccess={fetchCourses}
         />
       )}
-      {isAdmin && editCourse && (
+      {isAuthorized && editCourse && (
         <EditCourseModal
           course={editCourse}
           onClose={() => setEditCourse(null)}

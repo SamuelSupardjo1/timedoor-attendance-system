@@ -1,5 +1,6 @@
 const lessonModel = require("../models/lessonModel");
 const responseHandler = require("../utils/responseHandler");
+const pool = require("../config/db");
 
 const { createLesson: createLessonModel } = require("../models/lessonModel");
 
@@ -21,7 +22,8 @@ const getLessons = async (req, res, next) => {
     let parent_id = null;
     
     if (req.user.role === 'student') {
-      student_id = req.user.id;
+      const studentRes = await pool.query('SELECT id FROM students WHERE user_id = $1', [req.user.id]);
+      student_id = studentRes.rows[0]?.id || null;
     } else if (req.user.role === 'parent') {
       parent_id = req.user.id;
     }
@@ -39,7 +41,8 @@ const getLessonById = async (req, res, next) => {
     let parent_id = null;
     
     if (req.user.role === 'student') {
-      student_id = req.user.id;
+      const studentRes = await pool.query('SELECT id FROM students WHERE user_id = $1', [req.user.id]);
+      student_id = studentRes.rows[0]?.id || null;
     } else if (req.user.role === 'parent') {
       parent_id = req.user.id;
     }

@@ -23,7 +23,7 @@ const ParentDashboard = () => {
             limit: 100
           }
         });
-        const parentStudents = studentsRes.data.data || [];
+        const parentStudents = studentsRes.data.data.data || [];
         
         setStudents(parentStudents);
         
@@ -71,7 +71,12 @@ const ParentDashboard = () => {
             const lessonsRes = await api.get("/lessons", { params: { limit: 1000 } });
             const lessons = lessonsRes.data.data.data || [];
             // Find lessons for this course and get the max lesson number
-            const courseLessons = lessons.filter(l => l.course_name === latestAttendance.course_name || l.course_id === latestAttendance.course_id);
+            const courseLessons = lessons.filter(l => 
+              l.course_name === latestAttendance.course_name || 
+              l.course_id === latestAttendance.course_id ||
+              l.course_name === latestAttendance.student_course_name ||
+              l.course_id === latestAttendance.student_course_id
+            );
             if (courseLessons.length > 0) {
               maxLessonNumber = Math.max(...courseLessons.map(l => l.lesson_number || 0));
             }
@@ -87,14 +92,14 @@ const ParentDashboard = () => {
             lesson_name: latestAttendance.lesson_name || "Current Lesson",
             lesson_number: currentLessonNumber,
             lesson_progress: lessonProgress,
-            course_name: latestAttendance.course_name || "No Course",
+            course_name: latestAttendance.course_name || latestAttendance.student_course_name || "No Course",
             lesson_status: latestAttendance.lesson_status || "not_started",
             attendance_status: latestAttendance.status,
             student_name: selectedStudent?.name || "Student",
             teacher_name: latestAttendance.teacher_name || "TBA",
           });
         } else {
-          setError("No attendance records for this student");
+          setCurrentLesson(null);
         }
       } catch (err) {
         console.error("Error fetching current lesson:", err);

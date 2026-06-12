@@ -11,6 +11,7 @@ const StudentDashboard = () => {
   const [submittedCodes, setSubmittedCodes] = useState({});
   const [codeInput, setCodeInput] = useState({});
   const [studentId, setStudentId] = useState(null);
+  const [lessons, setLessons] = useState([]);
 
   // Fetch student ID on component mount
   useEffect(() => {
@@ -35,17 +36,22 @@ const StudentDashboard = () => {
     }
   }, [user?.id]);
 
-  // Fetch active meetings
+  // Fetch active meetings and lessons
   useEffect(() => {
-    const fetchMeetings = async () => {
+    const fetchMeetingsAndLessons = async () => {
       if (!studentId) return;
 
       try {
         setLoading(true);
         setError(null);
-        const res = await api.get(`/attendance/student/${studentId}/meetings`);
-        const meetingsData = res.data.data || [];
+        const [meetingsRes, lessonsRes] = await Promise.all([
+          api.get(`/attendance/student/${studentId}/meetings`),
+          api.get(`/lessons?limit=1000`),
+        ]);
+        
+        const meetingsData = meetingsRes.data.data || [];
         setMeetings(meetingsData);
+        setLessons(lessonsRes.data.data.data || []);
 
         // Initialize submitted codes state
         const codes = {};
@@ -56,14 +62,14 @@ const StudentDashboard = () => {
         });
         setSubmittedCodes(codes);
       } catch (err) {
-        console.error("Error fetching meetings:", err);
-        setError("Failed to load meetings");
+        console.error("Error fetching data:", err);
+        setError("Failed to load meetings and lessons");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMeetings();
+    fetchMeetingsAndLessons();
   }, [studentId]);
 
   const handleCodeChange = (meetingId, value) => {
@@ -191,6 +197,16 @@ const StudentDashboard = () => {
     }
   };
 
+  const getLessonProgress = (meeting) => {
+    if (!meeting.lesson_number) return null;
+    const courseLessons = lessons.filter(l => l.course_name === meeting.course_name);
+    if (courseLessons.length > 0) {
+      const maxLessonNumber = Math.max(...courseLessons.map(l => l.lesson_number || 0));
+      return `${meeting.lesson_number} / ${maxLessonNumber}`;
+    }
+    return `${meeting.lesson_number}`;
+  };
+
   return (
     <Layout>
       {/* Header */}
@@ -227,7 +243,10 @@ const StudentDashboard = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-bold text-gray-800">{meeting.class_name}</h3>
-                    <p className="text-gray-500 text-sm">{meeting.lesson_name}</p>
+                    <p className="text-gray-500 text-sm">
+                      {meeting.lesson_name}
+                      {meeting.lesson_number && ` (Lesson ${getLessonProgress(meeting)})`}
+                    </p>
                     <p className="text-gray-400 text-xs mt-1">
                       {new Date(meeting.date).toLocaleDateString('en-US', {
                         weekday: 'long',

@@ -14,10 +14,10 @@ const createMeeting = async (class_id, date) => {
   return result.rows[0];
 };
 
-const getMeetings = async (page = 1, limit = 10, search = "") => {
+const getMeetings = async (page = 1, limit = 10, search = "", teacherUserId = null) => {
   const offset = (page - 1) * limit;
 
-  const result = await pool.query(`
+  let query = `
     SELECT 
       meetings.*,
       classes.class_name,
@@ -29,17 +29,46 @@ const getMeetings = async (page = 1, limit = 10, search = "") => {
     LEFT JOIN teachers ON class_teachers.teacher_id = teachers.id
     LEFT JOIN users ON teachers.user_id = users.id
     LEFT JOIN attendance ON meetings.id = attendance.meeting_id
-    WHERE classes.class_name ILIKE $1 OR meetings.attendance_code ILIKE $1
+    WHERE (classes.class_name ILIKE $1 OR meetings.attendance_code ILIKE $1)
+  `;
+  const params = [`%${search}%`, limit, offset];
+
+  if (teacherUserId) {
+    query += ` AND classes.id IN (
+      SELECT ct.class_id
+      FROM class_teachers ct
+      JOIN teachers t ON ct.teacher_id = t.id
+      WHERE t.user_id = $4
+    )`;
+    params.push(teacherUserId);
+  }
+
+  query += `
     GROUP BY meetings.id, classes.class_name
     ORDER BY meetings.date DESC
     LIMIT $2 OFFSET $3
-  `, [`%${search}%`, limit, offset]);
+  `;
 
-  const total = await pool.query(`
+  const result = await pool.query(query, params);
+
+  let totalQuery = `
     SELECT COUNT(DISTINCT meetings.id) FROM meetings
     JOIN classes ON meetings.class_id = classes.id
-    WHERE classes.class_name ILIKE $1 OR meetings.attendance_code ILIKE $1
-  `, [`%${search}%`]);
+    WHERE (classes.class_name ILIKE $1 OR meetings.attendance_code ILIKE $1)
+  `;
+  const totalParams = [`%${search}%`];
+
+  if (teacherUserId) {
+    totalQuery += ` AND classes.id IN (
+      SELECT ct.class_id
+      FROM class_teachers ct
+      JOIN teachers t ON ct.teacher_id = t.id
+      WHERE t.user_id = $2
+    )`;
+    totalParams.push(teacherUserId);
+  }
+
+  const total = await pool.query(totalQuery, totalParams);
 
   return {
     data: result.rows,
@@ -112,11 +141,34 @@ const startMeeting = async (meeting_id) => {
   return true;
 };
 
+const checkTeacherAccess = async (user_id, class_id) => {
+  const result = await pool.query(`
+    SELECT 1 
+    FROM class_teachers ct
+    JOIN teachers t ON ct.teacher_id = t.id
+    WHERE t.user_id = $1 AND ct.class_id = $2
+  `, [user_id, class_id]);
+  return result.rows.length > 0;
+};
+
+const checkTeacherMeetingAccess = async (user_id, meeting_id) => {
+  const result = await pool.query(`
+    SELECT 1 
+    FROM meetings m
+    JOIN class_teachers ct ON m.class_id = ct.class_id
+    JOIN teachers t ON ct.teacher_id = t.id
+    WHERE t.user_id = $1 AND m.id = $2
+  `, [user_id, meeting_id]);
+  return result.rows.length > 0;
+};
+
 module.exports = {
   createMeeting,
   getMeetings,
   getMeetingById,
   updateMeeting,
   deleteMeeting,
-  startMeeting
+  startMeeting,
+  checkTeacherAccess,
+  checkTeacherMeetingAccess
 };

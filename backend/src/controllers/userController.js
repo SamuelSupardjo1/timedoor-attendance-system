@@ -3,8 +3,8 @@ const responseHandler = require("../utils/responseHandler");
 
 const getUsers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const users = await userModel.getAllUsers(page, limit);
+    const { page = 1, limit = 10, search = "", role = "" } = req.query;
+    const users = await userModel.getAllUsers(page, limit, search, role);
     responseHandler.success(res, 200, users);
   } catch (err) {
     next(err);

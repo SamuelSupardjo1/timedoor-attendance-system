@@ -1,13 +1,35 @@
 const bcrypt = require("bcrypt");
 const pool = require("../config/db");
 
-const getAllUsers = async (page = 1, limit = 10) => {
+const getAllUsers = async (page = 1, limit = 10, search = "", role = "") => {
   const offset = (page - 1) * limit;
-  const result = await pool.query(
-    `SELECT id, name, email, role FROM users LIMIT $1 OFFSET $2`,
-    [limit, offset]
-  );
-  const total = await pool.query(`SELECT COUNT(*) FROM users`);
+  let query = `SELECT id, name, email, role FROM users WHERE 1=1`;
+  let countQuery = `SELECT COUNT(*) FROM users WHERE 1=1`;
+  let params = [];
+  let paramIndex = 1;
+
+  if (search) {
+    query += ` AND (name ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`;
+    countQuery += ` AND (name ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`;
+    params.push(`%${search}%`);
+    paramIndex++;
+  }
+
+  if (role) {
+    query += ` AND role = $${paramIndex}`;
+    countQuery += ` AND role = $${paramIndex}`;
+    params.push(role);
+    paramIndex++;
+  }
+
+  query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  params.push(limit, offset);
+
+  const result = await pool.query(query, params);
+
+  const countParams = params.slice(0, paramIndex - 1);
+  const total = await pool.query(countQuery, countParams);
+
   return {
     data: result.rows,
     meta: {

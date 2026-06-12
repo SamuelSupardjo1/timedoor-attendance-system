@@ -5,6 +5,7 @@ import { MdAdd, MdSearch, MdEdit, MdDelete, MdVisibility } from "react-icons/md"
 import { useNavigate } from "react-router-dom";
 import AddClassModal from "../components/AddClassModal";
 import EditClassModal from "../components/EditClassModal";
+import { showAlert } from "../utils/alert";
 
 const Classes = () => {
   const [classes, setClasses] = useState([]);
@@ -39,12 +40,14 @@ const Classes = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this class?")) return;
+    const confirmResult = await showAlert.confirm("Are you sure?", "You want to delete this class?");
+    if (!confirmResult.isConfirmed) return;
     try {
       await api.delete(`/classes/${id}`);
+      showAlert.success("Success", "Class deleted successfully");
       fetchClasses();
     } catch (err) {
-      alert(err.response?.data?.message || "Cannot delete class");
+      showAlert.error("Error", err.response?.data?.message || "Cannot delete class");
     }
   };
 

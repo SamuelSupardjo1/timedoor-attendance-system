@@ -1,6 +1,37 @@
 const pool = require("../config/db");
 
-const markAttendance = async (student_id, meeting_id , lesson_id, status) => {
+const validateStudentCourse = async (student_id, lesson_id) => {
+  // Ambil course_id dari pelajaran yang sudah ditugaskan ke murid
+  const studentCourseRes = await pool.query(`
+    SELECT DISTINCT l.course_id, c.course_name
+    FROM student_lessons sl
+    JOIN lessons l ON sl.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE sl.student_id = $1
+  `, [student_id]);
+
+  if (studentCourseRes.rows.length > 0) {
+    const enrolledCourseId = studentCourseRes.rows[0].course_id;
+    const enrolledCourseName = studentCourseRes.rows[0].course_name;
+
+    // Ambil course_id dari lesson_id yang akan diajukan absensinya
+    const targetLessonRes = await pool.query(`
+      SELECT course_id FROM lessons WHERE id = $1
+    `, [lesson_id]);
+
+    if (targetLessonRes.rows[0] && targetLessonRes.rows[0].course_id !== enrolledCourseId) {
+      const error = new Error(`Student is already enrolled in course "${enrolledCourseName}". Students can only take one course at a time.`);
+      error.status = 400;
+      throw error;
+    }
+  }
+};
+
+const markAttendance = async (student_id, meeting_id, lesson_id, status) => {
+  if (lesson_id) {
+    await validateStudentCourse(student_id, lesson_id);
+  }
+
   const result = await pool.query(
     `INSERT INTO attendance (student_id, meeting_id, lesson_id, status, created_at)
      VALUES ($1,$2,$3,$4,NOW())
@@ -11,7 +42,7 @@ const markAttendance = async (student_id, meeting_id , lesson_id, status) => {
   return result.rows[0];
 };
 
-const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = null, parent_id = null) => {
+const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = null, parent_id = null, teacher_user_id = null) => {
   const offset = (page - 1) * limit;
   
   let params = [];
@@ -36,6 +67,17 @@ const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = nul
     paramIndex++;
   }
 
+  if (teacher_user_id) {
+    whereConditions.push(`meetings.class_id IN (
+      SELECT ct.class_id
+      FROM class_teachers ct
+      JOIN teachers t ON ct.teacher_id = t.id
+      WHERE t.user_id = $${paramIndex}
+    )`);
+    params.push(teacher_user_id);
+    paramIndex++;
+  }
+
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
   params.push(limit);
@@ -52,7 +94,9 @@ const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = nul
       lessons.status AS lesson_status,
       courses.course_name,
       classes.class_name,
-      teacher_users.name AS teacher_name
+      teacher_users.name AS teacher_name,
+      (SELECT DISTINCT co2.course_name FROM student_lessons sl2 JOIN lessons l2 ON sl2.lesson_id = l2.id JOIN courses co2 ON l2.course_id = co2.id WHERE sl2.student_id = students.id LIMIT 1) AS student_course_name,
+      (SELECT DISTINCT co2.id FROM student_lessons sl2 JOIN lessons l2 ON sl2.lesson_id = l2.id JOIN courses co2 ON l2.course_id = co2.id WHERE sl2.student_id = students.id LIMIT 1) AS student_course_id
     FROM attendance
     JOIN students ON attendance.student_id = students.id
     JOIN users ON students.user_id = users.id
@@ -91,11 +135,13 @@ const getAttendance = async (page = 1, limit = 10, search = "", meeting_id = nul
   };
 };
 
-const getAttendanceById = async (id, parent_id = null) => {
+const getAttendanceById = async (id, parent_id = null, teacher_user_id = null) => {
   let query = `
     SELECT attendance.*, students.user_id, meetings.date, meetings.attendance_code, 
             lessons.lesson_name, lessons.lesson_number, lessons.status AS lesson_status, courses.course_name, classes.class_name,
-            teacher_users.name AS teacher_name
+            teacher_users.name AS teacher_name,
+            (SELECT DISTINCT co2.course_name FROM student_lessons sl2 JOIN lessons l2 ON sl2.lesson_id = l2.id JOIN courses co2 ON l2.course_id = co2.id WHERE sl2.student_id = students.id LIMIT 1) AS student_course_name,
+            (SELECT DISTINCT co2.id FROM student_lessons sl2 JOIN lessons l2 ON sl2.lesson_id = l2.id JOIN courses co2 ON l2.course_id = co2.id WHERE sl2.student_id = students.id LIMIT 1) AS student_course_id
      FROM attendance
      JOIN students ON attendance.student_id = students.id
      JOIN meetings ON attendance.meeting_id = meetings.id
@@ -108,21 +154,63 @@ const getAttendanceById = async (id, parent_id = null) => {
      WHERE attendance.id = $1
   `;
   let params = [id];
+  let paramIndex = 2;
 
   if (parent_id) {
-    query += ` AND students.parent_id = $2`;
+    query += ` AND students.parent_id = $${paramIndex}`;
     params.push(parent_id);
+    paramIndex++;
+  }
+
+  if (teacher_user_id) {
+    query += ` AND meetings.class_id IN (
+      SELECT ct.class_id
+      FROM class_teachers ct
+      JOIN teachers t ON ct.teacher_id = t.id
+      WHERE t.user_id = $${paramIndex}
+    )`;
+    params.push(teacher_user_id);
+    paramIndex++;
   }
 
   const result = await pool.query(query, params);
   return result.rows[0];
 };
 
-const updateAttendance = async (id, status) => {
-  const result = await pool.query(
-    `UPDATE attendance SET status = $1 WHERE id = $2 RETURNING *`,
-    [status, id]
-  );
+const updateAttendance = async (id, status, lesson_id = undefined) => {
+  if (lesson_id !== undefined) {
+    const attRes = await pool.query("SELECT student_id FROM attendance WHERE id = $1", [id]);
+    if (attRes.rows[0]) {
+      await validateStudentCourse(attRes.rows[0].student_id, lesson_id);
+    }
+  }
+
+  let query = "UPDATE attendance SET";
+  let params = [];
+  let index = 1;
+
+  if (status !== undefined) {
+    query += ` status = $${index},`;
+    params.push(status);
+    index++;
+  }
+
+  if (lesson_id !== undefined) {
+    query += ` lesson_id = $${index},`;
+    params.push(lesson_id);
+    index++;
+  }
+
+  // Nothing to update
+  if (params.length === 0) return null;
+
+  // Remove trailing comma
+  query = query.slice(0, -1);
+
+  query += ` WHERE id = $${index} RETURNING *`;
+  params.push(id);
+
+  const result = await pool.query(query, params);
   return result.rows[0];
 };
 
@@ -143,9 +231,9 @@ const getStudentActiveMeetings = async (student_id) => {
       m.date,
       c.id as class_id,
       c.class_name,
-      c.description as lesson_name,
-      NULL as lesson_number,
-      c.class_name as course_name,
+      COALESCE(l.lesson_name, c.description) as lesson_name,
+      l.lesson_number as lesson_number,
+      COALESCE(co.course_name, c.class_name) as course_name,
       STRING_AGG(DISTINCT u.name, ', ') as teacher_name,
       COALESCE(a.id, NULL) as attendance_id,
       COALESCE(a.code_submitted, NULL) as code_submitted,
@@ -157,10 +245,12 @@ const getStudentActiveMeetings = async (student_id) => {
     LEFT JOIN teachers t ON ct.teacher_id = t.id
     LEFT JOIN users u ON t.user_id = u.id
     LEFT JOIN attendance a ON a.student_id = $1 AND a.meeting_id = m.id
+    LEFT JOIN lessons l ON a.lesson_id = l.id
+    LEFT JOIN courses co ON l.course_id = co.id
     WHERE cs.student_id = $1 
       AND m.date >= NOW()::date - INTERVAL '7 days'
       AND m.date <= NOW()::date + INTERVAL '7 days'
-    GROUP BY m.id, c.id, a.id
+    GROUP BY m.id, c.id, a.id, l.id, co.id
     ORDER BY m.date DESC
   `, [student_id]);
   return result.rows;
@@ -263,6 +353,18 @@ const resubmitAttendanceCode = async (student_id, meeting_id, code) => {
   return result.rows[0] || null;
 };
 
+const checkTeacherAttendanceAccess = async (user_id, attendance_id) => {
+  const result = await pool.query(`
+    SELECT 1 
+    FROM attendance a
+    JOIN meetings m ON a.meeting_id = m.id
+    JOIN class_teachers ct ON m.class_id = ct.class_id
+    JOIN teachers t ON ct.teacher_id = t.id
+    WHERE t.user_id = $1 AND a.id = $2
+  `, [user_id, attendance_id]);
+  return result.rows.length > 0;
+};
+
 module.exports = {
   markAttendance,
   getAttendance,
@@ -273,5 +375,6 @@ module.exports = {
   submitAttendanceCode,
   getPendingAttendance,
   approveAttendance,
-  resubmitAttendanceCode
+  resubmitAttendanceCode,
+  checkTeacherAttendanceAccess
 };

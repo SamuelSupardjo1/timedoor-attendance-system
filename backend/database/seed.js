@@ -11,7 +11,6 @@ const client = new Client({
 
 // Utility function to generate random code
 const generateAttendanceCode = () => {
-  // Generate 6-digit numeric code (matches student submission format)
   return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
 };
 
@@ -19,7 +18,7 @@ async function seedDatabase() {
   try {
     await client.connect();
 
-    console.log("🌱 Seeding database...");
+    console.log("🌱 Seeding database with Real Case Scenarios (Timedoor Coding Academy)...");
 
     // Clear existing data
     await client.query("DELETE FROM meeting_feedback");
@@ -39,20 +38,32 @@ async function seedDatabase() {
     const hashedPassword = await bcrypt.hash("password123", 10);
 
     // ===== SEED USERS =====
-    console.log("📝 Creating users...");
+    console.log("📝 Creating admin & teachers...");
 
     // Admin User
     const adminResult = await client.query(`
       INSERT INTO users (name, email, password, role)
-      VALUES ('Admin User', 'admin@school.com', $1, 'admin')
+      VALUES ('Timedoor Admin', 'admin@timedooracademy.com', $1, 'admin')
       RETURNING id
     `, [hashedPassword]);
     const adminId = adminResult.rows[0].id;
 
     // Teachers (5)
     const teachers = [];
-    const teacherNames = ["John Smith", "Sarah Johnson", "Michael Brown", "Emily Davis", "Robert Wilson"];
-    const teacherEmails = ["john@school.com", "sarah@school.com", "michael@school.com", "emily@school.com", "robert@school.com"];
+    const teacherNames = [
+      "Coach Andre Kurnia",
+      "Coach Bella Amanda",
+      "Coach Yusuf Hidayat",
+      "Coach Devy Natalia",
+      "Coach Rian Wijaya"
+    ];
+    const teacherEmails = [
+      "andre@timedooracademy.com",
+      "bella@timedooracademy.com",
+      "yusuf@timedooracademy.com",
+      "devy@timedooracademy.com",
+      "rian@timedooracademy.com"
+    ];
 
     for (let i = 0; i < 5; i++) {
       const result = await client.query(`
@@ -75,28 +86,65 @@ async function seedDatabase() {
     }
 
     // Parents (10)
+    console.log("👪 Creating parents...");
+    const parentNames = [
+      "Bapak Budi Hartono",
+      "Ibu Christine Wijaya",
+      "Bapak Setiawan Pratama",
+      "Ibu Helena Siregar",
+      "Bapak Gunawan Sulistyo",
+      "Ibu Diana Safitri",
+      "Bapak Adrian Hartanto",
+      "Ibu Siska Natalia",
+      "Bapak Hendra Lesmana",
+      "Ibu Meliana Halim"
+    ];
+    const parentEmails = [
+      "budi.hartono@gmail.com",
+      "christine.wijaya@gmail.com",
+      "setiawan.p@gmail.com",
+      "helena.s@gmail.com",
+      "gunawan.s@gmail.com",
+      "diana.safitri@gmail.com",
+      "adrian.h@gmail.com",
+      "siska.n@gmail.com",
+      "hendra.l@gmail.com",
+      "meliana.h@gmail.com"
+    ];
+
     const parentUsers = [];
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 0; i < 10; i++) {
       const result = await client.query(`
         INSERT INTO users (name, email, password, role)
         VALUES ($1, $2, $3, 'parent')
         RETURNING id
-      `, [`Parent ${i}`, `parent${i}@email.com`, hashedPassword]);
+      `, [parentNames[i], parentEmails[i], hashedPassword]);
       parentUsers.push(result.rows[0].id);
     }
 
-    // Students (15) - linked to parents
-    console.log("👥 Creating students...");
+    // Students (12) - linked to parents
+    console.log("👦 Creating students...");
+    const studentNames = [
+      "Alvin Pratama", "Clara Santoso", "Daniel Wijaya", "Ethan Hartono", 
+      "Fiona Siregar", "Gabriel Sulistyo", "Ivan Safitri", "Jessica Hartanto",
+      "Kevin Lesmana", "Laura Halim", "Matthew Setiawan", "Naomi Kurnia"
+    ];
+    const studentEmails = [
+      "alvin@student.timedoor.com", "clara@student.timedoor.com", "daniel@student.timedoor.com", "ethan@student.timedoor.com",
+      "fiona@student.timedoor.com", "gabriel@student.timedoor.com", "ivan@student.timedoor.com", "jessica@student.timedoor.com",
+      "kevin@student.timedoor.com", "laura@student.timedoor.com", "matthew@student.timedoor.com", "naomi@student.timedoor.com"
+    ];
+
     const studentIds = [];
-    for (let i = 1; i <= 15; i++) {
+    for (let i = 0; i < studentNames.length; i++) {
       const result = await client.query(`
         INSERT INTO users (name, email, password, role)
         VALUES ($1, $2, $3, 'student')
         RETURNING id
-      `, [`Student ${i}`, `student${i}@school.com`, hashedPassword]);
+      `, [studentNames[i], studentEmails[i], hashedPassword]);
 
       const studentUserId = result.rows[0].id;
-      const parentId = parentUsers[(i - 1) % parentUsers.length];
+      const parentId = parentUsers[i % parentUsers.length]; // Link to parent
 
       const studentResult = await client.query(`
         INSERT INTO students (user_id, parent_id)
@@ -110,11 +158,9 @@ async function seedDatabase() {
     // ===== SEED COURSES =====
     console.log("📚 Creating courses...");
     const courseData = [
-      { name: "Game Development", desc: "Advanced game development with modern engines" },
-      { name: "Web Development", desc: "Full-stack web development bootcamp" },
-      { name: "Mobile Apps", desc: "iOS and Android app development" },
-      { name: "Python Programming", desc: "Python basics to advanced concepts" },
-      { name: "Data Science", desc: "Data analysis and visualization" }
+      { name: "Roblox Game Developer", desc: "Learn Lua Scripting, 3D Design, and Game Mechanics in Roblox Studio" },
+      { name: "Web Development Starter", desc: "Build Responsive Websites using HTML5, CSS3, Flexbox, and Vanilla JS" },
+      { name: "Python for Kids & AI", desc: "Introduction to Logic, Pygame Development, and Artificial Intelligence" }
     ];
 
     const courseIds = [];
@@ -129,123 +175,142 @@ async function seedDatabase() {
 
     // ===== SEED LESSONS =====
     console.log("📖 Creating lessons...");
-    const lessonIds = [];
-    const lessonsPerCourse = 16;
+    const lessonsData = {
+      [courseIds[0]]: [
+        "Roblox Studio UI & Interface",
+        "Introduction to Lua Programming",
+        "Variables & Working with Parts",
+        "Functions & Triggering Events",
+        "Loops & Spawning Obstacles",
+        "Creating an Obby Game",
+        "Advanced Tweens & Part Movement",
+        "Leaderboards & Player Data Saving"
+      ],
+      [courseIds[1]]: [
+        "HTML5 Structure & Semantic Tags",
+        "CSS3 Colors, Backgrounds & Borders",
+        "Box Model & Margin Padding",
+        "Responsive Flexbox Layouts",
+        "JavaScript Syntax & Functions",
+        "DOM Manipulation & Event Listeners",
+        "Fetching API Data dynamically",
+        "React Component Lifecycle Basics"
+      ],
+      [courseIds[2]]: [
+        "Introduction to Python & Variables",
+        "Conditional Statements (If-Else)",
+        "Lists, Tuples, & Dictionaries",
+        "While & For Loops in Automation",
+        "Drawing Shapes with Turtle Graphics",
+        "Setting up Pygame Screen",
+        "Handling Keyboard Inputs & Movement",
+        "Basic AI Bot with Logic Controls"
+      ]
+    };
 
+    const lessonIds = [];
     for (const courseId of courseIds) {
-      for (let i = 1; i <= lessonsPerCourse; i++) {
-        // Vary lesson status: some not started, some in progress, some completed
+      const lessons = lessonsData[courseId];
+      for (let i = 0; i < lessons.length; i++) {
         let status = "not_started";
-        const rand = Math.random();
-        if (rand > 0.7) status = "completed";
-        else if (rand > 0.3) status = "in_progress";
+        if (i < 3) status = "completed";
+        else if (i === 3) status = "in_progress";
 
         const result = await client.query(`
           INSERT INTO lessons (course_id, lesson_number, lesson_name, status)
           VALUES ($1, $2, $3, $4)
           RETURNING id
-        `, [courseId, i, `Lesson ${i}`, status]);
+        `, [courseId, i + 1, lessons[i], status]);
         lessonIds.push({ id: result.rows[0].id, status, courseId });
       }
     }
 
     // ===== SEED CLASSES =====
     console.log("🏫 Creating classes...");
-    const classIds = [];
-    const classNames = ["Class A - Web Dev", "Class B - Game Dev", "Class C - Python", "Class D - Mobile"];
+    const classNames = [
+      "Saturday Roblox Junior",
+      "Sunday Web Coding Advanced",
+      "Friday Python Basics"
+    ];
+    const classDescriptions = [
+      "Roblox Coding Class for ages 9-12 (Saturday 09:00 - 11:00)",
+      "Web Coding Bootcamp for ages 13-16 (Sunday 13:00 - 15:00)",
+      "Python and Logic Coding for ages 10-14 (Friday 16:00 - 18:00)"
+    ];
     
-    for (const className of classNames) {
+    const classIds = [];
+    for (let i = 0; i < classNames.length; i++) {
       const result = await client.query(`
         INSERT INTO classes (class_name, description)
         VALUES ($1, $2)
         RETURNING id
-      `, [className, `${className} - Weekly classroom sessions`]);
+      `, [classNames[i], classDescriptions[i]]);
       classIds.push(result.rows[0].id);
     }
 
     // ===== ASSIGN TEACHERS TO CLASSES =====
     console.log("👨‍🏫 Assigning teachers to classes...");
-    for (const classId of classIds) {
-      // 1-2 teachers per class
-      const teachersForClass = Math.floor(Math.random() * 2) + 1;
-      const assignedTeachers = new Set();
-      
-      while (assignedTeachers.size < teachersForClass) {
-        const teacherId = teacherIds[Math.floor(Math.random() * teacherIds.length)];
-        if (!assignedTeachers.has(teacherId)) {
-          assignedTeachers.add(teacherId);
-          await client.query(`
-            INSERT INTO class_teachers (class_id, teacher_id)
-            VALUES ($1, $2)
-            ON CONFLICT DO NOTHING
-          `, [classId, teacherId]);
-        }
+    // Class 0 -> Coach Andre
+    await client.query(`INSERT INTO class_teachers (class_id, teacher_id) VALUES ($1, $2)`, [classIds[0], teacherIds[0]]);
+    // Class 1 -> Coach Bella & Coach Yusuf
+    await client.query(`INSERT INTO class_teachers (class_id, teacher_id) VALUES ($1, $2)`, [classIds[1], teacherIds[1]]);
+    await client.query(`INSERT INTO class_teachers (class_id, teacher_id) VALUES ($1, $2)`, [classIds[1], teacherIds[2]]);
+    // Class 2 -> Coach Devy
+    await client.query(`INSERT INTO class_teachers (class_id, teacher_id) VALUES ($1, $2)`, [classIds[2], teacherIds[3]]);
+
+    // ===== ASSIGN STUDENTS TO CLASSES & ENROLL THEM TO SINGLE COURSE LESSONS =====
+    console.log("👨‍🎓 Assigning students to classes & lessons (Constraint Enforced)...");
+    
+    // Roblox Class Students (Student 1-4)
+    const robloxStudents = studentIds.slice(0, 4);
+    const robloxLessons = lessonIds.filter(l => l.courseId === courseIds[0]);
+    for (const studentId of robloxStudents) {
+      await client.query(`INSERT INTO class_students (class_id, student_id) VALUES ($1, $2)`, [classIds[0], studentId]);
+      // Assign Roblox lessons (level 1-4)
+      for (let j = 0; j < 4; j++) {
+        await client.query(`INSERT INTO student_lessons (student_id, lesson_id) VALUES ($1, $2)`, [studentId, robloxLessons[j].id]);
       }
     }
 
-    // ===== ASSIGN STUDENTS TO CLASSES =====
-    console.log("👨‍🎓 Assigning students to classes...");
-    for (let i = 0; i < studentIds.length; i++) {
-      // Each student is in 1-2 classes
-      const classesForStudent = Math.floor(Math.random() * 2) + 1;
-      const assignedClasses = new Set();
-      
-      while (assignedClasses.size < classesForStudent) {
-        const classId = classIds[Math.floor(Math.random() * classIds.length)];
-        if (!assignedClasses.has(classId)) {
-          assignedClasses.add(classId);
-          await client.query(`
-            INSERT INTO class_students (class_id, student_id)
-            VALUES ($1, $2)
-            ON CONFLICT DO NOTHING
-          `, [classId, studentIds[i]]);
-        }
+    // Web Coding Class Students (Student 5-8)
+    const webStudents = studentIds.slice(4, 8);
+    const webLessons = lessonIds.filter(l => l.courseId === courseIds[1]);
+    for (const studentId of webStudents) {
+      await client.query(`INSERT INTO class_students (class_id, student_id) VALUES ($1, $2)`, [classIds[1], studentId]);
+      // Assign Web lessons (level 1-4)
+      for (let j = 0; j < 4; j++) {
+        await client.query(`INSERT INTO student_lessons (student_id, lesson_id) VALUES ($1, $2)`, [studentId, webLessons[j].id]);
       }
     }
 
-    // ===== ASSIGN LESSONS TO STUDENTS =====
-    console.log("📚 Assigning lessons to students...");
-    for (const studentId of studentIds) {
-      // Each student takes 1-3 lessons
-      const lessonsForStudent = Math.floor(Math.random() * 3) + 1;
-      const assignedLessons = new Set();
-      
-      while (assignedLessons.size < lessonsForStudent) {
-        const lesson = lessonIds[Math.floor(Math.random() * lessonIds.length)];
-        if (!assignedLessons.has(lesson.id)) {
-          assignedLessons.add(lesson.id);
-          await client.query(`
-            INSERT INTO student_lessons (student_id, lesson_id)
-            VALUES ($1, $2)
-            ON CONFLICT DO NOTHING
-          `, [studentId, lesson.id]);
-        }
+    // Python Class Students (Student 9-12)
+    const pythonStudents = studentIds.slice(8, 12);
+    const pythonLessons = lessonIds.filter(l => l.courseId === courseIds[2]);
+    for (const studentId of pythonStudents) {
+      await client.query(`INSERT INTO class_students (class_id, student_id) VALUES ($1, $2)`, [classIds[2], studentId]);
+      // Assign Python lessons (level 1-4)
+      for (let j = 0; j < 4; j++) {
+        await client.query(`INSERT INTO student_lessons (student_id, lesson_id) VALUES ($1, $2)`, [studentId, pythonLessons[j].id]);
       }
     }
 
     // ===== SEED MEETINGS =====
     console.log("📅 Creating meetings...");
     const meetingIds = [];
-    let meetingCount = 0;
+    const meetingDates = [
+      new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),  // 1 week ago
+      new Date(),                                     // today
+    ];
 
-    // Create 2-3 meetings per class
-    const meetingsPerClass = Math.floor(Math.random() * 2) + 2;
-    
-    for (const classId of classIds) {
-      for (let m = 0; m < meetingsPerClass; m++) {
-        const daysAgo = m * 7 + Math.floor(Math.random() * 2); // Weekly spacing
-        
-        const meetingDate = new Date();
-        meetingDate.setDate(meetingDate.getDate() - daysAgo);
-
+    for (let c = 0; c < classIds.length; c++) {
+      for (let m = 0; m < meetingDates.length; m++) {
         const result = await client.query(`
           INSERT INTO meetings (class_id, date, attendance_code)
           VALUES ($1, $2, $3)
           RETURNING id
-        `, [classId, meetingDate.toISOString().split('T')[0], generateAttendanceCode()]);
-
-        meetingIds.push(result.rows[0].id);
-        meetingCount++;
+        `, [classIds[c], meetingDates[m].toISOString().split('T')[0], generateAttendanceCode()]);
+        meetingIds.push({ id: result.rows[0].id, classIndex: c, meetingIndex: m });
       }
     }
 
@@ -253,129 +318,97 @@ async function seedDatabase() {
     console.log("✅ Creating attendance records...");
     let attendanceCount = 0;
 
-    // Helper function to generate 6-digit code
-    const generate6DigitCode = () => {
-      return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
-    };
+    for (const mObj of meetingIds) {
+      // Find class students
+      let targetStudents = [];
+      let targetLessons = [];
+      if (mObj.classIndex === 0) {
+        targetStudents = robloxStudents;
+        targetLessons = robloxLessons;
+      } else if (mObj.classIndex === 1) {
+        targetStudents = webStudents;
+        targetLessons = webLessons;
+      } else {
+        targetStudents = pythonStudents;
+        targetLessons = pythonLessons;
+      }
 
-    for (const meetingId of meetingIds) {
-      // Get class for this meeting
-      const classResult = await client.query(
-        `SELECT class_id FROM meetings WHERE id = $1`,
-        [meetingId]
-      );
-      const classId = classResult.rows[0].class_id;
+      // Assign lesson based on meeting index (Meeting 0 -> Lesson 0, Meeting 1 -> Lesson 1...)
+      const activeLesson = targetLessons[mObj.meetingIndex % targetLessons.length];
 
-      // Get students in this class
-      const classStudentsResult = await client.query(
-        `SELECT student_id FROM class_students WHERE class_id = $1`,
-        [classId]
-      );
-      const classStudentIds = classStudentsResult.rows.map(r => r.student_id);
+      for (const studentId of targetStudents) {
+        const status = Math.random() > 0.1 ? "present" : "absent";
+        let codeSubmitted = null;
+        let approvalStatus = "pending";
+        let submittedAt = null;
+        let approvedAt = null;
 
-      // Random 50-80% of class students attend
-      const attendanceRate = 0.5 + Math.random() * 0.3;
-      const attendingCount = Math.ceil(classStudentIds.length * attendanceRate);
-      const attendingStudents = classStudentIds.slice(0, Math.min(attendingCount, classStudentIds.length));
-
-      // Add attendance for each student
-      for (const studentId of attendingStudents) {
-        // Get lessons assigned to this student
-        const studentLessonsResult = await client.query(
-          `SELECT lesson_id FROM student_lessons WHERE student_id = $1`,
-          [studentId]
-        );
-        const studentLessons = studentLessonsResult.rows;
-
-        // If student has lessons, randomly pick one for this meeting
-        if (studentLessons.length > 0) {
-          const lesson = studentLessons[Math.floor(Math.random() * studentLessons.length)];
-          const status = Math.random() > 0.15 ? "present" : "absent"; // 85% present
+        if (status === "present") {
+          codeSubmitted = generateAttendanceCode();
+          submittedAt = new Date(meetingDates[mObj.meetingIndex].getTime() + 15 * 60 * 1000); // 15 mins after class start
           
-          // Generate 6-digit code and approval status
-          const codeSubmitted = Math.random() > 0.3 ? generate6DigitCode() : null;
-          let approvalStatus = 'pending';
-          let submittedAt = null;
-          let approvedAt = null;
-          
-          if (codeSubmitted) {
-            submittedAt = new Date(new Date().getTime() - Math.random() * 86400000); // Random time in last 24 hours
-            const approvalRandom = Math.random();
-            if (approvalRandom > 0.6) {
-              approvalStatus = 'approved';
-              approvedAt = new Date(submittedAt.getTime() + 3600000); // 1 hour after submission
-            } else if (approvalRandom > 0.3) {
-              approvalStatus = 'rejected';
-              approvedAt = new Date(submittedAt.getTime() + 1800000); // 30 mins after submission
-            }
-            // else approvalStatus stays 'pending'
+          if (mObj.meetingIndex < 2) { // past meetings
+            approvalStatus = "approved";
+            approvedAt = new Date(submittedAt.getTime() + 5 * 60 * 1000);
           }
-
-          await client.query(`
-            INSERT INTO attendance (student_id, meeting_id, lesson_id, status, code_submitted, approval_status, submitted_at, approved_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          `, [studentId, meetingId, lesson.lesson_id, status, codeSubmitted, approvalStatus, submittedAt, approvedAt]);
-          attendanceCount++;
+        } else {
+          if (mObj.meetingIndex < 2) {
+            approvalStatus = "rejected";
+          }
         }
+
+        await client.query(`
+          INSERT INTO attendance (student_id, meeting_id, lesson_id, status, code_submitted, approval_status, submitted_at, approved_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [studentId, mObj.id, activeLesson.id, status, codeSubmitted, approvalStatus, submittedAt, approvedAt]);
+        attendanceCount++;
       }
     }
 
     // ===== SEED FEEDBACK =====
     console.log("💬 Creating feedback records...");
     const feedbackTexts = [
-      "Great work! Keep it up.",
-      "Good progress, but needs improvement in specific areas.",
-      "Excellent participation and understanding.",
-      "Shows improvement from previous lessons.",
-      "Needs more practice with concepts.",
-      "Outstanding performance!",
-      "Average performance, encourage to ask questions.",
-      "Very creative approach to problem solving.",
-      "Good effort, keep practicing.",
-      "Excellent grasp of the material."
+      "Sangat aktif dalam kelas dan berhasil menyelesaikan coding challenges dengan cepat.",
+      "Memiliki logika berpikir yang bagus, namun perlu lebih teliti ketika mengetik sintaks.",
+      "Mampu mendemonstrasikan hasil karyanya dengan sangat percaya diri hari ini.",
+      "Memahami konsep perulangan dengan baik. Bagus sekali progresnya!",
+      "Sedikit kesulitan fokus di awal kelas, tetapi berhasil mengejar materi di akhir sesi.",
+      "Hasil kodingan berjalan tanpa bug! Pemahaman logika dasar sangat solid."
     ];
 
     let feedbackCount = 0;
+    // Feedback for past meetings only
+    const pastMeetings = meetingIds.filter(m => m.meetingIndex < 2);
+    for (const mObj of pastMeetings) {
+      let targetStudents = mObj.classIndex === 0 ? robloxStudents : mObj.classIndex === 1 ? webStudents : pythonStudents;
+      let teacherId = mObj.classIndex === 0 ? teacherIds[0] : mObj.classIndex === 1 ? teacherIds[1] : teacherIds[3];
 
-    for (let i = 0; i < Math.min(meetingIds.length, 30); i++) {
-      const meetingId = meetingIds[i];
-      const teacherId = teacherIds[i % teacherIds.length];
-
-      // 3-5 feedback per meeting
-      const feedbackPerMeeting = Math.floor(Math.random() * 3) + 3;
-      const feedbackStudents = studentIds.slice(0, feedbackPerMeeting);
-
-      for (const studentId of feedbackStudents) {
+      for (const studentId of targetStudents) {
         const feedback = feedbackTexts[Math.floor(Math.random() * feedbackTexts.length)];
-        const mediaUrl = Math.random() > 0.7 ? `https://example.com/video-${i}-${studentId}.mp4` : null;
-
         await client.query(`
-          INSERT INTO meeting_feedback (meeting_id, student_id, teacher_id, feedback, media_url)
-          VALUES ($1, $2, $3, $4, $5)
-        `, [meetingId, studentId, teacherId, feedback, mediaUrl]);
-
+          INSERT INTO meeting_feedback (meeting_id, student_id, teacher_id, feedback)
+          VALUES ($1, $2, $3, $4)
+        `, [mObj.id, studentId, teacherId, feedback]);
         feedbackCount++;
       }
     }
 
     console.log("\n✅ Seeding completed successfully!");
-    console.log(`📊 Statistics:`);
-    console.log(`   - Admin: 1`);
-    console.log(`   - Teachers: ${teachers.length}`);
-    console.log(`   - Students: ${studentIds.length}`);
-    console.log(`   - Parents: ${parentUsers.length}`);
-    console.log(`   - Classes: ${classIds.length}`);
-    console.log(`   - Courses: ${courseIds.length}`);
-    console.log(`   - Lessons: ${lessonIds.length}`);
-    console.log(`   - Meetings: ${meetingCount}`);
+    console.log(`📊 Real-Case Statistics:`);
+    console.log(`   - Teachers: 5 (Andre, Bella, Yusuf, Devy, Rian)`);
+    console.log(`   - Parents: 10`);
+    console.log(`   - Students: 12`);
+    console.log(`   - Courses: 3 (Roblox, Web Dev, Python)`);
+    console.log(`   - Lessons: 24 (8 lessons per course)`);
+    console.log(`   - Classes: 3 (Saturday Roblox, Sunday Web, Friday Python)`);
     console.log(`   - Attendance Records: ${attendanceCount}`);
     console.log(`   - Feedback Records: ${feedbackCount}`);
     
     console.log("\n🔑 Test Credentials:");
-    console.log(`   Admin: admin@school.com / password123`);
-    console.log(`   Teacher: ${teacherEmails[0]} / password123`);
-    console.log(`   Parent: parent1@email.com / password123`);
-    console.log(`   Student: student1@school.com / password123`);
+    console.log(`   Admin: admin@timedooracademy.com / password123`);
+    console.log(`   Teacher (Roblox): andre@timedooracademy.com / password123`);
+    console.log(`   Parent: budi.hartono@gmail.com / password123`);
+    console.log(`   Student (Alvin): alvin@student.timedoor.com / password123`);
 
     await client.end();
   } catch (err) {

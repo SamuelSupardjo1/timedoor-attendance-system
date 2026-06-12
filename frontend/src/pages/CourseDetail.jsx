@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 import { MdArrowBack, MdAdd, MdEdit, MdDelete } from "react-icons/md";
 import AddLessonModal from "../components/AddLessonModal"; 
 import EditLessonModal from "../components/EditLessonModal";
+import { showAlert } from "../utils/alert";
 
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAuthorized = user?.role === "admin" || user?.role === "teacher";
 
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
@@ -43,12 +47,14 @@ const CourseDetail = () => {
   }, [id]);
 
   const handleDelete = async (lessonId) => {
-    if (!confirm("Are you sure you want to delete this lesson?")) return;
+    const confirmResult = await showAlert.confirm("Are you sure?", "You want to delete this lesson?");
+    if (!confirmResult.isConfirmed) return;
     try {
       await api.delete(`/lessons/${lessonId}`);
+      showAlert.success("Success", "Lesson deleted successfully");
       fetchLessons();
     } catch (err) {
-      alert(err.response?.data?.message || "Cannot delete lesson");
+      showAlert.error("Error", err.response?.data?.message || "Cannot delete lesson");
     }
   };
 
@@ -81,12 +87,14 @@ const CourseDetail = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-800">Lessons</h2>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
-          >
-            <MdAdd size={16} /> Add Lesson
-          </button>
+          {isAuthorized && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
+            >
+              <MdAdd size={16} /> Add Lesson
+            </button>
+          )}
         </div>
 
         <table className="w-full">
@@ -119,18 +127,24 @@ const CourseDetail = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-2">
-                      <button
-                        onClick={() => setEditLesson(lesson)}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
-                      >
-                        <MdEdit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(lesson.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
-                      >
-                        <MdDelete size={16} />
-                      </button>
+                      {isAuthorized && (
+                        <>
+                          <button
+                            onClick={() => setEditLesson(lesson)}
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                          >
+                            <MdEdit size={16} />
+                          </button>
+                          {user?.role === "admin" && (
+                            <button
+                              onClick={() => handleDelete(lesson.id)}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                            >
+                              <MdDelete size={16} />
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -140,14 +154,14 @@ const CourseDetail = () => {
         </table>
       </div>
 
-      {showAddModal && (
+      {isAuthorized && showAddModal && (
         <AddLessonModal
           courseId={id}
           onClose={() => setShowAddModal(false)}
           onSuccess={fetchLessons}
         />
       )}
-      {editLesson && (
+      {isAuthorized && editLesson && (
         <EditLessonModal
           lesson={editLesson}
           onClose={() => setEditLesson(null)}

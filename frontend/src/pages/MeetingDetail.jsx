@@ -5,6 +5,7 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { MdArrowBack, MdCheckCircle, MdCancel, MdAdd, MdRemoveRedEye } from "react-icons/md";
 import AddFeedbackModal from "../components/AddFeedbackModal";
+import { showAlert } from "../utils/alert";
 
 const MeetingDetail = () => {
   const { id } = useParams();
@@ -19,7 +20,10 @@ const MeetingDetail = () => {
   const [checkInMessage, setCheckInMessage] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackStudentId, setFeedbackStudentId] = useState(null);
   const [selectedStudentFeedback, setSelectedStudentFeedback] = useState(null);
+
+  const [lessons, setLessons] = useState([]);
 
   const handleUpdateAttendance = async (attendanceId, newStatus) => {
     try {
@@ -38,6 +42,33 @@ const MeetingDetail = () => {
     }
   };
 
+  const handleUpdateLesson = async (attendanceId, lessonId) => {
+    try {
+      const val = lessonId === "" ? null : parseInt(lessonId);
+      await api.put(`/attendance/${attendanceId}`, { lesson_id: val });
+      
+      // Update locally
+      setAttendance((prev) =>
+        prev.map((record) => {
+          if (record.id === attendanceId) {
+            const selectedLesson = lessons.find((l) => l.id === val);
+            return {
+              ...record,
+              lesson_id: val,
+              lesson_name: selectedLesson ? selectedLesson.lesson_name : null,
+              lesson_number: selectedLesson ? selectedLesson.lesson_number : null,
+              course_name: selectedLesson ? selectedLesson.course_name : null,
+            };
+          }
+          return record;
+        })
+      );
+    } catch (err) {
+      console.error(err);
+      showAlert.error("Error", err.response?.data?.message || "Failed to update lesson");
+    }
+  };
+
   const fetchFeedback = async () => {
     try {
       const res = await api.get(`/meeting-feedback?meeting_id=${id}&limit=100`);
@@ -50,7 +81,7 @@ const MeetingDetail = () => {
   const fetchMeeting = async () => {
     try {
       const res = await api.get(`/meetings/${id}`);
-      setMeeting(res.data);
+      setMeeting(res.data.data);
     } catch (err) {
       console.error(err);
     }
@@ -68,10 +99,20 @@ const MeetingDetail = () => {
     }
   };
 
+  const fetchAllLessons = async () => {
+    try {
+      const res = await api.get("/lessons?limit=1000");
+      setLessons(res.data.data.data || []);
+    } catch (err) {
+      console.error("Error fetching lessons:", err);
+    }
+  };
+
   useEffect(() => {
     fetchMeeting();
     fetchAttendance();
     fetchFeedback();
+    fetchAllLessons();
   }, [id]);
 
   const handleCheckIn = async (e) => {
@@ -98,12 +139,15 @@ const MeetingDetail = () => {
   };
 
   const handleStartMeeting = async () => {
-    if (!confirm("Are you sure you want to start this meeting? This will generate attendance records for all students in the class.")) return;
+    const confirmResult = await showAlert.confirm("Start Meeting?", "This will generate attendance records for all students in the class.");
+    if (!confirmResult.isConfirmed) return;
     try {
       await api.post(`/meetings/${id}/start`);
+      showAlert.success("Success", "Meeting started successfully");
+      fetchMeeting();
       fetchAttendance();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to start meeting");
+      showAlert.error("Error", err.response?.data?.error || err.response?.data?.message || "Failed to start meeting");
     }
   };
 
@@ -133,12 +177,12 @@ const MeetingDetail = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">{meeting.lesson_name}</h1>
-              <p className="text-gray-400 mt-1">Lesson #{meeting.lesson_number}</p>
+              <h1 className="text-2xl font-bold text-gray-800">{meeting.class_name}</h1>
+              <p className="text-gray-400 mt-1">Class ID: #{meeting.class_id}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">Teacher</p>
-              <p className="font-medium text-gray-800">{meeting.teacher_name}</p>
+              <p className="text-sm text-gray-500">Teachers</p>
+              <p className="font-medium text-gray-800">{meeting.teacher_names || "No teachers assigned"}</p>
             </div>
           </div>
 
@@ -216,7 +260,8 @@ const MeetingDetail = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Student</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Student</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Lesson</th>
                 <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Status</th>
                 <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Time</th>
                 <th className="text-center px-6 py-4 text-xs font-semibold text-gray-400 uppercase">Feedback</th>
@@ -225,16 +270,16 @@ const MeetingDetail = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-12 text-gray-400">Loading...</td>
+                  <td colSpan={5} className="text-center py-12 text-gray-400">Loading...</td>
                 </tr>
               ) : attendance.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-12 text-gray-400">No attendance records yet</td>
+                  <td colSpan={5} className="text-center py-12 text-gray-400">No attendance records yet</td>
                 </tr>
               ) : (
                 attendance.map((record) => (
                   <tr key={record.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-sm">
                           {record.student_name?.charAt(0).toUpperCase()}
@@ -245,6 +290,54 @@ const MeetingDetail = () => {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-left">
+                      {user?.role === "teacher" || user?.role === "admin" ? (
+                        <div className="flex flex-col gap-1 items-start">
+                          <div className="relative w-full max-w-[220px]">
+                            <select
+                              value={record.lesson_id || ""}
+                              onChange={(e) => handleUpdateLesson(record.id, e.target.value)}
+                              className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-green-400 text-slate-700 font-semibold rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-100 transition-all duration-200 cursor-pointer appearance-none"
+                              style={{
+                                backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                                backgroundRepeat: "no-repeat",
+                                backgroundPosition: "right 10px center",
+                                backgroundSize: "12px",
+                                paddingRight: "28px"
+                              }}
+                            >
+                              <option value="" className="text-slate-400 font-normal">No lesson assigned</option>
+                              {lessons
+                                .filter((l) => !record.student_course_id || l.course_id === record.student_course_id)
+                                .map((l) => (
+                                  <option key={l.id} value={l.id} className="text-slate-700">
+                                    Lesson {l.lesson_number} • {l.lesson_name}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                          {record.lesson_name && (
+                            <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-100 px-2 py-0.5 rounded-lg">
+                              {record.course_name}
+                            </span>
+                          )}
+                        </div>
+                      ) : record.lesson_name ? (
+                        <div className="text-left">
+                          <p className="text-sm font-semibold text-slate-800">{record.lesson_name}</p>
+                          <div className="flex gap-1.5 items-center mt-1">
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                              Lvl #{record.lesson_number}
+                            </span>
+                            <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md">
+                              {record.course_name}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       {(user?.role === "teacher" || user?.role === "admin") ? (
                         <button
@@ -253,16 +346,16 @@ const MeetingDetail = () => {
                             record.status === "present" ? "absent" : "present"
                           )}
                           className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition hover:opacity-70 ${record.status === "present"
-                              ? "bg-green-100 text-green-600"
-                              : "bg-red-100 text-red-500"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-500"
                             }`}
                         >
                           {record.status}
                         </button>
                       ) : (
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${record.status === "present"
-                            ? "bg-green-200 text-green-600"
-                            : "bg-red-200 text-red-500"
+                          ? "bg-green-200 text-green-600"
+                          : "bg-red-200 text-red-500"
                           }`}>
                           {record.status}
                         </span>
@@ -288,7 +381,10 @@ const MeetingDetail = () => {
                           </button>
                         ) : (user?.role === "teacher" || user?.role === "admin") ? (
                           <button
-                            onClick={() => setShowFeedbackModal(true)}
+                            onClick={() => {
+                              setFeedbackStudentId(record.student_id);
+                              setShowFeedbackModal(true);
+                            }}
                             className="p-1.5 text-green-500 hover:bg-green-200 rounded-lg transition"
                           >
                             <MdAdd size={16} />
@@ -311,7 +407,11 @@ const MeetingDetail = () => {
       {showFeedbackModal && (
         <AddFeedbackModal
           meetingId={id}
-          onClose={() => setShowFeedbackModal(false)}
+          studentId={feedbackStudentId}
+          onClose={() => {
+            setShowFeedbackModal(false);
+            setFeedbackStudentId(null);
+          }}
           onSuccess={fetchFeedback}
         />
       )}

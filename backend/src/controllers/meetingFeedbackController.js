@@ -1,12 +1,35 @@
 const meetingFeedbackModel = require("../models/meetingFeedbackModel");
 const responseHandler = require("../utils/responseHandler");
+const pool = require("../config/db");
 
 const createFeedback = async (req, res, next) => {
   try {
-    const { meeting_id , student_id, teacher_id, feedback, media_url } = req.body;
+    const { meeting_id, student_id, feedback, media_url } = req.body;
+
+    // 1. Only teacher role is allowed
+    if (req.user.role !== "teacher") {
+      return responseHandler.forbidden(res, "Access denied. Only teachers can give feedback.");
+    }
+
+    // 2. Must be the teacher of the meeting
+    const isAuthorized = await pool.query(`
+      SELECT 1
+      FROM meetings m
+      JOIN class_teachers ct ON m.class_id = ct.class_id
+      JOIN teachers t ON ct.teacher_id = t.id
+      WHERE t.user_id = $1 AND m.id = $2
+    `, [req.user.id, meeting_id]);
+
+    if (isAuthorized.rows.length === 0) {
+      return responseHandler.forbidden(res, "Access denied. You do not teach the class for this meeting.");
+    }
+
+    // 3. Resolve teacher_id automatically
+    const teacherRes = await pool.query("SELECT id FROM teachers WHERE user_id = $1", [req.user.id]);
+    const teacher_id = teacherRes.rows[0].id;
 
     const result = await meetingFeedbackModel.createFeedback(
-      meeting_id ,
+      meeting_id,
       student_id,
       teacher_id,
       feedback,
@@ -31,7 +54,8 @@ const getFeedbacks = async (req, res, next) => {
     let parent_id = null;
     
     if (req.user.role === 'student') {
-      student_id = req.user.id;
+      const studentRes = await pool.query('SELECT id FROM students WHERE user_id = $1', [req.user.id]);
+      student_id = studentRes.rows[0]?.id || null;
     } else if (req.user.role === 'parent') {
       parent_id = req.user.id;
     }
@@ -49,7 +73,8 @@ const getFeedbackById = async (req, res, next) => {
     let parent_id = null;
     
     if (req.user.role === 'student') {
-      student_id = req.user.id;
+      const studentRes = await pool.query('SELECT id FROM students WHERE user_id = $1', [req.user.id]);
+      student_id = studentRes.rows[0]?.id || null;
     } else if (req.user.role === 'parent') {
       parent_id = req.user.id;
     }
